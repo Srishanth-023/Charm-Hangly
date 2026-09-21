@@ -1,0 +1,1067 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="Hangly.App.Customize.CustomizeWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:local="using:Hangly.App.Customize">
+
+    <Grid x:Name="Root">
+        <Grid.Resources>
+            <!--
+                One tile. The tick is a border rather than a checkbox: a charm is chosen
+                by clicking its picture, and a checkbox beside it would be a second way
+                to do the same thing.
+            -->
+            <DataTemplate x:Key="CharmTemplate" x:DataType="local:CharmTile">
+                <Grid
+                    Width="84"
+                    Height="102"
+                    Padding="3"
+                    AutomationProperties.Name="{x:Bind DisplayName, Mode=OneTime}"
+                    ToolTipService.ToolTip="{x:Bind DisplayName, Mode=OneTime}">
+                    <Border
+                        BorderBrush="{x:Bind Outline, Mode=OneWay}"
+                        BorderThickness="2"
+                        CornerRadius="8" />
+                    <Button
+                        Width="26"
+                        Height="26"
+                        Padding="0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        AutomationProperties.Name="{x:Bind FavouriteLabel, Mode=OneWay}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="OnFavouriteClicked"
+                        Content="{x:Bind FavouriteGlyph, Mode=OneWay}"
+                        FontFamily="Segoe Fluent Icons"
+                        FontSize="14"
+                        Tag="{x:Bind Id, Mode=OneTime}"
+                        ToolTipService.ToolTip="{x:Bind FavouriteLabel, Mode=OneWay}" />
+                    <StackPanel VerticalAlignment="Center">
+                        <Image
+                            Width="48"
+                            Height="48"
+                            Stretch="Uniform"
+                            Source="{x:Bind Image, Mode=OneTime}" />
+                        <TextBlock
+                            Margin="0,4,0,0"
+                            HorizontalAlignment="Center"
+                            MaxLines="2"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Text="{x:Bind DisplayName, Mode=OneTime}"
+                            TextAlignment="Center"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+            </DataTemplate>
+
+            <!-- A collection, as a card. The artwork is three of its own charms
+                 overlapping, which is what macOS does and what lets a collection be
+                 added without anyone drawing a cover for it. -->
+            <DataTemplate x:Key="CollectionTemplate" x:DataType="local:CollectionCard">
+                <Grid
+                    Width="222"
+                    Margin="0,0,10,10"
+                    Tapped="OnCollectionTapped"
+                    Padding="12"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid Width="54" Height="54" Margin="0,0,10,0">
+                        <Image
+                            Width="40"
+                            Height="40"
+                            Margin="0,0,24,0"
+                            Opacity="0.75"
+                            Source="{x:Bind Third, Mode=OneTime}"
+                            Stretch="Uniform"
+                            Visibility="{x:Bind ThirdVisibility, Mode=OneTime}" />
+                        <Image
+                            Width="44"
+                            Height="44"
+                            Margin="24,0,0,0"
+                            Opacity="0.9"
+                            Source="{x:Bind Second, Mode=OneTime}"
+                            Stretch="Uniform"
+                            Visibility="{x:Bind SecondVisibility, Mode=OneTime}" />
+                        <Image
+                            Width="52"
+                            Height="52"
+                            Source="{x:Bind First, Mode=OneTime}"
+                            Stretch="Uniform" />
+                    </Grid>
+                    <StackPanel Grid.Column="1" Spacing="2">
+                        <TextBlock
+                            FontWeight="SemiBold"
+                            Style="{StaticResource BodyStrongTextBlockStyle}"
+                            Text="{x:Bind Name, Mode=OneTime}" />
+                        <TextBlock
+                            Opacity="0.6"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Text="{x:Bind CountLabel, Mode=OneTime}" />
+                        <TextBlock
+                            Margin="0,4,0,0"
+                            Opacity="0.85"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Text="{x:Bind Description, Mode=OneTime}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="TagTemplate" x:DataType="x:String">
+                <Border
+                    Margin="0,0,6,6"
+                    Padding="8,3"
+                    Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                    CornerRadius="10">
+                    <TextBlock
+                        Opacity="0.9"
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Text="{x:Bind}" />
+                </Border>
+            </DataTemplate>
+        </Grid.Resources>
+
+        <!-- The pane is 300 rather than 200: it carries the charm's story now. -->
+        <muxc:NavigationView
+            x:Name="Nav"
+            IsBackButtonVisible="Collapsed"
+            IsPaneToggleButtonVisible="False"
+            IsSettingsVisible="False"
+            OpenPaneLength="300"
+            PaneDisplayMode="Left"
+            SelectionChanged="OnSectionChanged">
+
+            <muxc:NavigationView.MenuItems>
+                <muxc:NavigationViewItem Content="Library" Tag="charms" IsSelected="True">
+                    <muxc:NavigationViewItem.Icon>
+                        <SymbolIcon Symbol="Emoji2" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem Content="Create" Tag="create">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE790;" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem Content="Appearance" Tag="appearance">
+                    <muxc:NavigationViewItem.Icon>
+                        <SymbolIcon Symbol="View" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem Content="About" Tag="about">
+                    <muxc:NavigationViewItem.Icon>
+                        <SymbolIcon Symbol="Help" />
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+            </muxc:NavigationView.MenuItems>
+
+            <!--
+                The charm you are reading about, under the four page names.
+
+                It used to hold a column of the Library to itself, whether or not anything
+                was selected, and it scrolled inside a page that already scrolled. Here it
+                has the tall empty block beneath the navigation that nothing was using, it
+                updates as you pick charms, and it is the same panel on every page rather
+                than something the Library owns.
+            -->
+            <muxc:NavigationView.PaneFooter>
+                <Border
+                    x:Name="DetailPanel"
+                    Padding="16,12,16,16"
+                    BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                    BorderThickness="0,1,0,0">
+                    <Grid>
+                        <StackPanel
+                            x:Name="DetailPlaceholder"
+                            Margin="0,16,0,16"
+                            Spacing="6"
+                            Visibility="{x:Bind Detail.PlaceholderVisibility, Mode=OneWay}">
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                Opacity="0.5"
+                                Style="{StaticResource BodyTextBlockStyle}"
+                                Text="Pick a charm"
+                                TextAlignment="Center" />
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                Opacity="0.4"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Text="Its story shows up here."
+                                TextAlignment="Center" />
+                        </StackPanel>
+                            <ScrollViewer Visibility="{x:Bind Detail.PanelVisibility, Mode=OneWay}">
+                                <StackPanel Spacing="12">
+                                    <!--
+                                        Smaller than it was. At two hundred points the
+                                        preview was the tallest thing in the sidebar and
+                                        pushed the charm's own description below the fold,
+                                        which is the wrong way round: the picture is
+                                        already on the rope and in the grid, and the words
+                                        are the only place the charm is explained.
+                                    -->
+                                    <Border
+                                        Height="132"
+                                        Padding="12"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        CornerRadius="8">
+                                        <Image
+                                            AutomationProperties.AutomationId="DetailImage"
+                                            Source="{x:Bind Detail.Image, Mode=OneWay}"
+                                            Stretch="Uniform" />
+                                    </Border>
+
+                                    <StackPanel Spacing="2">
+                                        <TextBlock
+                                            AutomationProperties.AutomationId="DetailName"
+                                            Style="{StaticResource SubtitleTextBlockStyle}"
+                                            Text="{x:Bind Detail.DisplayName, Mode=OneWay}"
+                                            TextWrapping="Wrap" />
+                                        <TextBlock
+                                            AutomationProperties.AutomationId="DetailRegion"
+                                            CharacterSpacing="60"
+                                            FontSize="11"
+                                            FontWeight="SemiBold"
+                                            Opacity="0.55"
+                                            Text="{x:Bind Detail.Region, Mode=OneWay}"
+                                            TextWrapping="Wrap"
+                                            Visibility="{x:Bind Detail.RegionVisibility, Mode=OneWay}" />
+                                        <TextBlock
+                                            AutomationProperties.AutomationId="DetailCategory"
+                                            Margin="0,2,0,0"
+                                            Opacity="0.75"
+                                            Style="{StaticResource CaptionTextBlockStyle}"
+                                            Text="{x:Bind Detail.Category, Mode=OneWay}"
+                                            TextWrapping="Wrap"
+                                            Visibility="{x:Bind Detail.CategoryVisibility, Mode=OneWay}" />
+                                    </StackPanel>
+
+                                    <TextBlock
+                                        AutomationProperties.AutomationId="DetailDescription"
+                                        Opacity="0.85"
+                                        Style="{StaticResource BodyTextBlockStyle}"
+                                        Text="{x:Bind Detail.Description, Mode=OneWay}"
+                                        TextWrapping="Wrap" />
+
+                                    <ItemsControl
+                                        AutomationProperties.AutomationId="DetailTags"
+                                        ItemTemplate="{StaticResource TagTemplate}"
+                                        ItemsSource="{x:Bind Detail.Tags, Mode=OneWay}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <muxc:ItemsWrapGrid Orientation="Horizontal" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                    </ItemsControl>
+
+                                    <Border
+                                        Margin="0,4,0,0"
+                                        BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                        BorderThickness="0,1,0,0" />
+
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon
+                                            FontSize="14"
+                                            Glyph="{x:Bind Detail.RopeGlyph, Mode=OneWay}"
+                                            Opacity="0.8" />
+                                        <TextBlock
+                                            AutomationProperties.AutomationId="DetailRopeState"
+                                            Style="{StaticResource BodyTextBlockStyle}"
+                                            Text="{x:Bind Detail.RopeLabel, Mode=OneWay}" />
+                                    </StackPanel>
+
+                                    <Button
+                                        x:Name="DetailFavourite"
+                                        AutomationProperties.AutomationId="DetailFavourite"
+                                        Click="OnDetailFavouriteClicked"
+                                        HorizontalAlignment="Stretch">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <FontIcon FontSize="14" Glyph="{x:Bind Detail.FavouriteGlyph, Mode=OneWay}" />
+                                            <TextBlock Text="Favourite" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </ScrollViewer>
+                    </Grid>
+                </Border>
+            </muxc:NavigationView.PaneFooter>
+
+            <Grid>
+                <!-- Library -->
+                <!--
+                    Browsing is the point of this page, so browsing gets the room.
+
+                    It did not, and testers said so: the detail panel held a fixed column
+                    whether or not anything was selected, and above the charms sat the
+                    title, the cord summary, the one-two-three picker, the places on the
+                    rope and a size slider — about three hundred and eighty points of
+                    controls between the window's top edge and the first charm, on an
+                    eight-hundred-point window. Three rows of charms were visible where
+                    there was room for six.
+
+                    Everything about *the rope you have* now lives in the sidebar, which
+                    was mostly empty, and everything about *charms you might want* has the
+                    rest. The names are unchanged, so the code behind this did not move.
+                -->
+                <Grid x:Name="CharmsPage" Margin="0,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="278" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!--
+                        The detail panel. It follows the selection and never drives it:
+                        macOS documents the rule as "the detail pane, which always shows
+                        the selection", so picking a charm changes the rope and this
+                        reports what changed rather than offering a second way to do it.
+                    -->
+                    <!--
+                        What is on the cord: how many places, which one is chosen, and how
+                        big it is. The charm's own story is not here any more — it is in
+                        the navigation pane, where there was a tall empty block under the
+                        four page names and nothing using it.
+                    -->
+                    <Border
+                        Padding="20,16,20,20"
+                        BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                        BorderThickness="0,0,1,0">
+                      <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <!-- What is on the rope now, and how many places there are. -->
+                        <StackPanel Margin="0,0,0,16" Spacing="10">
+                            <TextBlock
+                                x:Name="CordSummary"
+                                Style="{StaticResource BodyTextBlockStyle}"
+                                Text="On the cord" />
+                            <muxc:RadioButtons
+                                x:Name="CountChoice"
+                                Header="Charms on the cord"
+                                MaxColumns="3"
+                                SelectionChanged="OnCountChanged">
+                                <x:String>1</x:String>
+                                <x:String>2</x:String>
+                                <x:String>3</x:String>
+                            </muxc:RadioButtons>
+                            <!--
+                                The places on the rope. A ListView rather than a row of
+                                buttons because reordering is a drag on macOS, and a ListView
+                                is the one WinUI control that does drag-reorder without the
+                                drop logic being written here.
+                            -->
+                            <muxc:ListView
+                                x:Name="SlotList"
+                                Padding="0"
+                                ScrollViewer.HorizontalScrollMode="Disabled"
+                                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                ScrollViewer.VerticalScrollMode="Disabled"
+                                ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                                AllowDrop="True"
+                                AutomationProperties.Name="Charms on the cord, drag to reorder"
+                                CanDragItems="True"
+                                CanReorderItems="True"
+                                IsItemClickEnabled="True"
+                                ItemClick="OnSlotItemClicked"
+                                ReorderMode="Enabled"
+                                SelectionMode="Single">
+                                <!--
+                                    Down the column, not across it.
+
+                                    Three places laid out horizontally at 96 points each
+                                    need 288 plus padding, and the column they sit in is
+                                    about 275 — so the third was cut off the right-hand
+                                    edge with no way to reach it. Reported as "the third
+                                    charm is hidden", and it was.
+
+                                    A vertical list cannot run out of width. Three places
+                                    fit at any window size and any scaling, the order
+                                    reads the way the cord does — top of the list is top
+                                    of the rope — and a name has room to be read rather
+                                    than trimmed to "Nazar bonc…".
+                                -->
+                                <muxc:ListView.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <muxc:ItemsStackPanel Orientation="Vertical" />
+                                    </ItemsPanelTemplate>
+                                </muxc:ListView.ItemsPanel>
+                                <muxc:ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="local:SlotTile">
+                                        <StackPanel
+                                            Orientation="Horizontal"
+                                            Padding="2"
+                                            Spacing="10">
+                                            <Image
+                                                Width="40"
+                                                Height="40"
+                                                VerticalAlignment="Center"
+                                                Source="{x:Bind Image, Mode=OneWay}"
+                                                Stretch="Uniform" />
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                MaxLines="1"
+                                                Style="{StaticResource BodyTextBlockStyle}"
+                                                Text="{x:Bind Name, Mode=OneWay}"
+                                                TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </muxc:ListView.ItemTemplate>
+                            </muxc:ListView>
+
+                            <!--
+                                Explicit move controls beside the drag.
+
+                                macOS reorders by dragging and so does this, but a drag is the
+                                only way it offers, and a drag cannot be done from the keyboard
+                                or verified by a test. These buttons do the same thing through
+                                the same path, which is what makes reordering something this
+                                build can promise rather than hope for.
+                            -->
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button
+                                    x:Name="MoveUpButton"
+                                    AutomationProperties.AutomationId="MoveUpButton"
+                                    AutomationProperties.Name="Move this charm up the cord"
+                                    Click="OnMoveSlotUp"
+                                    Content="Move up" />
+                                <Button
+                                    x:Name="MoveDownButton"
+                                    AutomationProperties.AutomationId="MoveDownButton"
+                                    AutomationProperties.Name="Move this charm down the cord"
+                                    Click="OnMoveSlotDown"
+                                    Content="Move down" />
+                            </StackPanel>
+
+                            <!-- The chosen place's own size: a trim against the master
+                                 slider, not a second copy of it. -->
+                            <StackPanel x:Name="SlotSizePanel" Spacing="2">
+                                <TextBlock
+                                    x:Name="SlotSizeLabel"
+                                    AutomationProperties.AutomationId="SlotSizeLabel"
+                                    Style="{StaticResource CaptionTextBlockStyle}" />
+                                <Slider
+                                    x:Name="SlotSizeSlider"
+                                    Width="300"
+                                    HorizontalAlignment="Left"
+                                    AutomationProperties.AutomationId="SlotSizeSlider"
+                                    AutomationProperties.Name="Size of the chosen charm"
+                                    LargeChange="0.1"
+                                    Maximum="1.6"
+                                    Minimum="0.6"
+                                    SmallChange="0.05"
+                                    StepFrequency="0.05"
+                                    ValueChanged="OnSlotSizeChanged" />
+                            </StackPanel>
+                        </StackPanel>
+                      </ScrollViewer>
+                    </Border>
+
+                    <Grid Grid.Column="1" Margin="24,16,24,16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!--
+                        Charms or ropes, as one switch. macOS puts the same two words at
+                        the top of its library and this build had no equivalent at all:
+                        ropes were on the Appearance page, two clicks away and in a
+                        different room from the thing they hang.
+                    -->
+                    <!--
+                        The switch sits beside the title rather than at the far right of
+                        the window, and that is not only taste: the charm hangs from the
+                        top right corner of the screen by default and draws over whatever
+                        is under it, so anything in that corner of this window is behind a
+                        charm some of the time.
+                    -->
+                    <Grid Margin="0,0,0,12" ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Style="{StaticResource TitleTextBlockStyle}"
+                            Text="Library" />
+                        <muxc:ListView
+                            x:Name="BrowseMode"
+                            Grid.Column="1"
+                            VerticalAlignment="Center"
+                            AutomationProperties.AutomationId="BrowseMode"
+                            AutomationProperties.Name="Browse charms or ropes"
+                            SelectionChanged="OnBrowseModeChanged"
+                            SelectionMode="Single">
+                            <muxc:ListView.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <muxc:ItemsStackPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </muxc:ListView.ItemsPanel>
+                            <x:String>Charms</x:String>
+                            <x:String>Ropes</x:String>
+                        </muxc:ListView>
+                    </Grid>
+
+                    <!-- Search and the chips. A category is a filter, and a filter is one
+                         click that leaves the charms where they are. -->
+                    <StackPanel x:Name="CharmTools" Grid.Row="1" Margin="0,0,0,10" Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <AutoSuggestBox
+                                x:Name="SearchBox"
+                                Width="300"
+                                AutomationProperties.Name="Search charms"
+                                PlaceholderText="Search charms, places, materials"
+                                QueryIcon="Find"
+                                TextChanged="OnSearchChanged" />
+                            <Button
+                                x:Name="ImportButton"
+                                AutomationProperties.Name="Import a charm"
+                                Click="OnImportClicked"
+                                Content="Import Charm…" />
+                            <Button
+                                x:Name="DeleteButton"
+                                AutomationProperties.Name="Delete the selected imported charm"
+                                Click="OnDeleteImportClicked"
+                                Content="Delete"
+                                Visibility="Collapsed" />
+                            <TextBlock
+                                x:Name="ImportMessage"
+                                VerticalAlignment="Center"
+                                AutomationProperties.AutomationId="ImportMessage"
+                                MaxWidth="480"
+                                Opacity="0.8"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <ScrollViewer
+                            HorizontalScrollBarVisibility="Auto"
+                            HorizontalScrollMode="Auto"
+                            VerticalScrollMode="Disabled">
+                            <StackPanel x:Name="FilterChips" Orientation="Horizontal" Spacing="8" />
+                        </ScrollViewer>
+                    </StackPanel>
+
+                    <Grid Grid.Row="2">
+                        <ScrollViewer x:Name="ResultsScroller">
+                            <StackPanel>
+                            <!-- Collections, as cards. Shown only when nothing is
+                                 filtering the view: they are a way in, and a way in is
+                                 noise once you have already narrowed to six charms. -->
+                            <ItemsControl
+                                x:Name="Collections"
+                                Margin="0,0,0,10"
+                                ItemTemplate="{StaticResource CollectionTemplate}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <muxc:ItemsWrapGrid Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                            <ItemsControl x:Name="Packs">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="local:CharmGroup">
+                                        <StackPanel Margin="0,0,0,18">
+                                            <TextBlock
+                                                Margin="0,0,0,6"
+                                                Style="{StaticResource SubtitleTextBlockStyle}"
+                                                Text="{x:Bind Name, Mode=OneTime}" />
+                                            <GridView
+                                                IsItemClickEnabled="True"
+                                                ItemClick="OnCharmClicked"
+                                                ItemTemplate="{StaticResource CharmTemplate}"
+                                                ItemsSource="{x:Bind Charms, Mode=OneTime}"
+                                                SelectionMode="None"
+                                                TabNavigation="Local" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!--
+                            Ropes. Five of them, each a different set of solver values
+                            rather than a different picture, which is why the description
+                            talks about how it moves and not what it looks like.
+                        -->
+                        <ScrollViewer x:Name="RopesScroller" Visibility="Collapsed">
+                            <muxc:ListView
+                                x:Name="RopeList"
+                                AutomationProperties.AutomationId="RopeList"
+                                AutomationProperties.Name="Rope styles"
+                                IsItemClickEnabled="True"
+                                ItemClick="OnRopeListClicked"
+                                SelectionMode="Single">
+                                <muxc:ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="local:RopeChoiceItem">
+                                        <StackPanel Margin="0,6,0,6" Spacing="2">
+                                            <TextBlock
+                                                Style="{StaticResource BodyStrongTextBlockStyle}"
+                                                Text="{x:Bind Name, Mode=OneTime}" />
+                                            <TextBlock
+                                                MaxWidth="520"
+                                                Opacity="0.7"
+                                                Style="{StaticResource CaptionTextBlockStyle}"
+                                                Text="{x:Bind Description, Mode=OneTime}"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </muxc:ListView.ItemTemplate>
+                            </muxc:ListView>
+                        </ScrollViewer>
+
+                        <!-- Empty states. Which one depends on why there is nothing. -->
+                        <StackPanel
+                            x:Name="EmptyState"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="6"
+                            Visibility="Collapsed">
+                            <TextBlock
+                                x:Name="EmptyTitle"
+                                HorizontalAlignment="Center"
+                                Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <TextBlock
+                                x:Name="EmptyDetail"
+                                HorizontalAlignment="Center"
+                                MaxWidth="360"
+                                Opacity="0.7"
+                                TextAlignment="Center"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                    </Grid>
+                </Grid>
+
+                <!--
+                    Create. The smallest thing that turns a picture into a charm: pick a
+                    file, see it, name it, hang it. Everything it does not offer —
+                    cutting out a background, moving the knot, editing the beads — is
+                    deliberately absent rather than unfinished.
+                -->
+                <ScrollViewer x:Name="CreatePage" Visibility="Collapsed">
+                    <StackPanel Margin="24,16,24,24" MaxWidth="640" HorizontalAlignment="Left" Spacing="16">
+                        <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Create" />
+                        <TextBlock
+                            Opacity="0.8"
+                            Style="{StaticResource BodyTextBlockStyle}"
+                            Text="Turn a picture into a charm. PNG, JPG or SVG."
+                            TextWrapping="Wrap" />
+
+                        <Button
+                            x:Name="CreateChooseButton"
+                            AutomationProperties.AutomationId="CreateChooseButton"
+                            Click="OnCreateChoose"
+                            Content="Choose a picture…" />
+
+                        <Border
+                            x:Name="CreatePreviewFrame"
+                            Height="260"
+                            Padding="16"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Visibility="Collapsed">
+                            <Image
+                                x:Name="CreatePreview"
+                                AutomationProperties.AutomationId="CreatePreview"
+                                Stretch="Uniform" />
+                        </Border>
+
+                        <StackPanel x:Name="CreateDetails" Spacing="6" Visibility="Collapsed">
+                            <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Name" />
+                            <TextBox
+                                x:Name="CreateNameBox"
+                                MaxWidth="320"
+                                HorizontalAlignment="Left"
+                                AutomationProperties.AutomationId="CreateNameBox"
+                                AutomationProperties.Name="Charm name"
+                                MaxLength="40"
+                                TextChanged="OnCreateNameChanged" />
+                            <TextBlock
+                                Opacity="0.7"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Text="It joins the Custom collection in your Library." />
+
+                            <StackPanel Margin="0,10,0,0" Orientation="Horizontal" Spacing="8">
+                                <Button
+                                    x:Name="CreateAndHangButton"
+                                    AutomationProperties.AutomationId="CreateAndHangButton"
+                                    Click="OnCreateAndHang"
+                                    Content="Create &amp; Hang"
+                                    Style="{StaticResource AccentButtonStyle}" />
+                                <Button
+                                    x:Name="CreateAndSaveButton"
+                                    AutomationProperties.AutomationId="CreateAndSaveButton"
+                                    Click="OnCreateAndSave"
+                                    Content="Create &amp; Save" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <TextBlock
+                            x:Name="CreateMessage"
+                            AutomationProperties.AutomationId="CreateMessage"
+                            MaxWidth="560"
+                            Opacity="0.85"
+                            Style="{StaticResource BodyTextBlockStyle}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Appearance -->
+                <ScrollViewer x:Name="AppearancePage" Visibility="Collapsed">
+                    <StackPanel Margin="24,16,24,24" Spacing="18">
+                        <TextBlock
+                            Style="{StaticResource TitleTextBlockStyle}"
+                            Text="Appearance" />
+
+                        <!-- The name given at onboarding, changeable here. A name
+                             someone is asked for once and can never correct is a name
+                             they will resent. -->
+                        <StackPanel Spacing="6">
+                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Size and reach" />
+                            <TextBlock x:Name="SizeLabel" Text="Charm size" />
+                            <Slider x:Name="SizeSlider" ValueChanged="OnSizeChanged" />
+                            <TextBlock x:Name="LengthLabel" Text="Rope length" />
+                            <Slider x:Name="LengthSlider" ValueChanged="OnLengthChanged" />
+                            <TextBlock x:Name="OpacityLabel" Text="Opacity" />
+                            <Slider x:Name="OpacitySlider" ValueChanged="OnOpacityChanged" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Where it hangs" />
+                            <ComboBox
+                                x:Name="AnchorChoice"
+                                MinWidth="260"
+                                SelectionChanged="OnAnchorChanged" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="8">
+                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Behaviour" />
+                            <ToggleSwitch
+                                x:Name="ShowToggle"
+                                Header="Show Hangly"
+                                Toggled="OnShowToggled" />
+                            <ToggleSwitch
+                                x:Name="LoginToggle"
+                                Header="Launch at login"
+                                Toggled="OnLoginToggled" />
+                        </StackPanel>
+
+                        <Button x:Name="ResetButton" Click="OnReset" Content="Restore defaults" />
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- About -->
+                <ScrollViewer x:Name="AboutPage" Visibility="Collapsed">
+                    <StackPanel Margin="24,16,24,24" MaxWidth="640" HorizontalAlignment="Left" Spacing="18">
+
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <Image
+                                x:Name="AppIcon"
+                                Width="72"
+                                Height="72"
+                                VerticalAlignment="Top" />
+                            <StackPanel Spacing="2">
+                                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Hangly" />
+                                <TextBlock
+                                    x:Name="VersionLine"
+                                    Opacity="0.8"
+                                    Style="{StaticResource BodyTextBlockStyle}" />
+                                <TextBlock
+                                    x:Name="CopyrightLine"
+                                    Opacity="0.7"
+                                    Style="{StaticResource CaptionTextBlockStyle}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <TextBlock
+                            Opacity="0.8"
+                            Style="{StaticResource BodyTextBlockStyle}"
+                            TextWrapping="Wrap"
+                            Text="An ornament that hangs on your desktop. Made by hand, for no reason other than that it is nice to have something hanging there." />
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <HyperlinkButton x:Name="WebsiteLink" Content="Website" />
+                            <HyperlinkButton x:Name="GitHubLink" Content="GitHub" />
+                            <HyperlinkButton x:Name="ReleaseNotesLink" Content="Release notes" />
+                        </StackPanel>
+
+                        <!--
+                            The creator card. macOS ships CreatorCard and BuyCoffeeSheet,
+                            and a UPI QR in its bundle, so the coffee flow there is a sheet
+                            rather than a link. Every line of copy here is quoted from the
+                            macOS binary; see Docs/LIBRARY-AUDIT.md.
+                        -->
+                        <Border
+                            x:Name="CreatorCard"
+                            Padding="18"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8">
+                            <StackPanel Spacing="12">
+                                <TextBlock
+                                    Style="{StaticResource BodyStrongTextBlockStyle}"
+                                    Text="Support the Creator" />
+                                <TextBlock
+                                    Opacity="0.8"
+                                    Style="{StaticResource BodyTextBlockStyle}"
+                                    Text="Thank you for using Hangly."
+                                    TextWrapping="Wrap" />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button
+                                        x:Name="CoffeeButton"
+                                        AutomationProperties.AutomationId="CoffeeButton"
+                                        Click="OnCoffeeClicked"
+                                        Content="Buy Creator a Coffee"
+                                        Style="{StaticResource AccentButtonStyle}" />
+                                    <HyperlinkButton
+                                        x:Name="InstagramLink"
+                                        Click="OnInstagramClicked"
+                                        Content="Instagram" />
+                                    <HyperlinkButton
+                                        x:Name="SuggestLink"
+                                        Click="OnSuggestClicked"
+                                        Content="Suggest a charm" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!--
+                            Getting back to the welcome. Somebody who dismissed it in three
+                            seconds had no way to see what Hangly does again, short of
+                            editing a settings file; it is the only place that explains
+                            where the app lives and how to reach it.
+                        -->
+                        <StackPanel Spacing="8">
+                            <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Help" />
+                            <Button
+                                x:Name="ShowWelcomeButton"
+                                AutomationProperties.AutomationId="ShowWelcomeButton"
+                                Click="OnShowWelcomeClicked"
+                                Content="Show welcome again"
+                                HorizontalAlignment="Left" />
+                            <TextBlock
+                                MaxWidth="560"
+                                Opacity="0.7"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Text="What Hangly is, where it lives, and how to get back to it."
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <!-- Updates. A check is a GET for a static file, so this says
+                             what it found and nothing about who asked. -->
+                        <StackPanel Spacing="8">
+                            <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Updates" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button
+                                    x:Name="CheckUpdateButton"
+                                    AutomationProperties.AutomationId="CheckUpdateButton"
+                                    Click="OnCheckForUpdates"
+                                    Content="Check for updates" />
+                                <Button
+                                    x:Name="InstallUpdateButton"
+                                    AutomationProperties.AutomationId="InstallUpdateButton"
+                                    Click="OnInstallUpdate"
+                                    Content="Install and restart"
+                                    Style="{StaticResource AccentButtonStyle}"
+                                    Visibility="Collapsed" />
+                            </StackPanel>
+                            <TextBlock
+                                x:Name="UpdateMessage"
+                                AutomationProperties.AutomationId="UpdateMessage"
+                                MaxWidth="560"
+                                Opacity="0.8"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                TextWrapping="Wrap" />
+                            <!-- What changed, straight from the release. It appears only
+                                 when there is an update and the release said something,
+                                 because an empty "What's new" box reads as a broken one. -->
+                            <Border
+                                x:Name="UpdateNotesPanel"
+                                Padding="12"
+                                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                MaxWidth="560"
+                                HorizontalAlignment="Left"
+                                Visibility="Collapsed">
+                                <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
+                                    <TextBlock
+                                        x:Name="UpdateNotes"
+                                        AutomationProperties.AutomationId="UpdateNotes"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        TextWrapping="Wrap" />
+                                </ScrollViewer>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Milestones. The macOS model AppMilestones carries exactly
+                             charms, launches and secretsFound; swings is the one counter
+                             named only by the statistics label. -->
+                        <StackPanel Spacing="8">
+                            <TextBlock
+                                Style="{StaticResource BodyStrongTextBlockStyle}"
+                                Text="Milestones" />
+                            <Grid ColumnSpacing="12" RowSpacing="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock
+                                        x:Name="StatLaunches"
+                                        AutomationProperties.AutomationId="StatLaunches"
+                                        Style="{StaticResource SubtitleTextBlockStyle}" />
+                                    <TextBlock Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}" Text="Launches" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock
+                                        x:Name="StatCharms"
+                                        AutomationProperties.AutomationId="StatCharms"
+                                        Style="{StaticResource SubtitleTextBlockStyle}" />
+                                    <TextBlock Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}" Text="Charms hung" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock
+                                        x:Name="StatSwings"
+                                        AutomationProperties.AutomationId="StatSwings"
+                                        Style="{StaticResource SubtitleTextBlockStyle}" />
+                                    <TextBlock Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}" Text="Swings survived" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="3">
+                                    <TextBlock
+                                        x:Name="StatSecrets"
+                                        AutomationProperties.AutomationId="StatSecrets"
+                                        Style="{StaticResource SubtitleTextBlockStyle}" />
+                                    <TextBlock Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}" Text="Secrets found" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Secrets. The button also pushes the rope, which is what the
+                             macOS description says it does. -->
+                        <StackPanel Spacing="8">
+                            <Button
+                                x:Name="SecretButton"
+                                AutomationProperties.AutomationId="SecretButton"
+                                AutomationProperties.HelpText="Reveals one of the app's secrets, and pushes the rope"
+                                Click="OnSecretClicked"
+                                Content="Tell me a secret" />
+                            <TextBlock
+                                x:Name="SecretText"
+                                AutomationProperties.AutomationId="SecretText"
+                                MaxWidth="560"
+                                Opacity="0.75"
+                                Style="{StaticResource BodyTextBlockStyle}"
+                                Text="No secret revealed yet"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <!--
+                            The analytics section. PRIVACY.md promises this exists and says
+                            what it shows, so it is part of the argument for collecting
+                            anything at all rather than a debug panel.
+                        -->
+                        <muxc:Expander
+                            x:Name="AnalyticsSection"
+                            HorizontalAlignment="Stretch"
+                            Header="Anonymous analytics">
+                            <StackPanel Margin="0,8,0,0" Spacing="12">
+                                <ToggleSwitch
+                                    x:Name="AnalyticsToggle"
+                                    Header="Share anonymous analytics"
+                                    Toggled="OnAnalyticsToggled" />
+                                <TextBlock
+                                    Opacity="0.75"
+                                    Style="{StaticResource CaptionTextBlockStyle}"
+                                    TextWrapping="Wrap"
+                                    Text="Counts which features are used, so Hangly can be made better. Never your name, your files, or where your charm sits. Switching it off stops collection immediately and throws away the installation identifier." />
+
+                                <Grid ColumnSpacing="16" RowSpacing="6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Opacity="0.7" Text="Sharing" />
+                                    <TextBlock x:Name="AnalyticsState" Grid.Column="1" />
+
+                                    <TextBlock Grid.Row="1" Opacity="0.7" Text="Destination" />
+                                    <TextBlock x:Name="AnalyticsEndpoint" Grid.Row="1" Grid.Column="1" />
+
+                                    <TextBlock Grid.Row="2" Opacity="0.7" Text="Installation" />
+                                    <TextBlock
+                                        x:Name="AnalyticsIdentifier"
+                                        Grid.Row="2"
+                                        Grid.Column="1"
+                                        FontFamily="Consolas"
+                                        IsTextSelectionEnabled="True" />
+
+                                    <TextBlock Grid.Row="3" Opacity="0.7" Text="Last event" />
+                                    <TextBlock x:Name="AnalyticsLastEvent" Grid.Row="3" Grid.Column="1" />
+
+                                    <TextBlock Grid.Row="4" Opacity="0.7" Text="Events sent" />
+                                    <TextBlock x:Name="AnalyticsSentCount" Grid.Row="4" Grid.Column="1" />
+
+                                    <TextBlock Grid.Row="5" Opacity="0.7" Text="Your name" />
+                                    <TextBlock
+                                        x:Name="AnalyticsUserName"
+                                        Grid.Row="5"
+                                        Grid.Column="1"
+                                        AutomationProperties.AutomationId="AnalyticsUserName" />
+                                </Grid>
+
+                                <!-- Exactly what leaves the machine, listed rather than
+                                     described. A privacy claim nobody can check is a
+                                     promise rather than a fact. -->
+                                <TextBlock
+                                    Margin="0,8,0,0"
+                                    Opacity="0.7"
+                                    Style="{StaticResource CaptionTextBlockStyle}"
+                                    Text="Every event carries these and nothing else:" />
+                                <TextBlock
+                                    x:Name="AnalyticsFields"
+                                    AutomationProperties.AutomationId="AnalyticsFields"
+                                    FontFamily="Consolas"
+                                    IsTextSelectionEnabled="True"
+                                    Opacity="0.85"
+                                    Style="{StaticResource CaptionTextBlockStyle}"
+                                    TextWrapping="Wrap" />
+                                <TextBlock
+                                    MaxWidth="560"
+                                    Opacity="0.7"
+                                    Style="{StaticResource CaptionTextBlockStyle}"
+                                    Text="Never your files, their names, their contents, the folders they came from, your clipboard, your email, or your Windows account name."
+                                    TextWrapping="Wrap" />
+
+                                <Button x:Name="RefreshAnalytics" Click="OnRefreshAnalytics" Content="Refresh" />
+                            </StackPanel>
+                        </muxc:Expander>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </muxc:NavigationView>
+    </Grid>
+
+</Window>

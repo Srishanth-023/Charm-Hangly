@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>13.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <Authors>SharanCreatedThis</Authors>
+    <Product>Hangly</Product>
+    <!-- The floor for everything in the solution. The app overrides it, and the release
+         build overrides that with the tag. -->
+    <Version>0.9.0</Version>
+  </PropertyGroup>
+</Project>
