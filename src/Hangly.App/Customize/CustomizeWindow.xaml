@@ -474,8 +474,6 @@
                                     AutomationProperties.AutomationId="SlotSizeSlider"
                                     AutomationProperties.Name="Size of the chosen charm"
                                     LargeChange="0.1"
-                                    Maximum="1.6"
-                                    Minimum="0.6"
                                     SmallChange="0.05"
                                     StepFrequency="0.05"
                                     ValueChanged="OnSlotSizeChanged" />
@@ -774,276 +772,656 @@
 
                 <!-- Appearance -->
                 <ScrollViewer x:Name="AppearancePage" Visibility="Collapsed">
-                    <StackPanel Margin="24,16,24,24" Spacing="18">
-                        <TextBlock
-                            Style="{StaticResource TitleTextBlockStyle}"
-                            Text="Appearance" />
-
-                        <!-- The name given at onboarding, changeable here. A name
-                             someone is asked for once and can never correct is a name
-                             they will resent. -->
-                        <StackPanel Spacing="6">
-                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Size and reach" />
-                            <TextBlock x:Name="SizeLabel" Text="Charm size" />
-                            <Slider x:Name="SizeSlider" ValueChanged="OnSizeChanged" />
-                            <TextBlock x:Name="LengthLabel" Text="Rope length" />
-                            <Slider x:Name="LengthSlider" ValueChanged="OnLengthChanged" />
-                            <TextBlock x:Name="OpacityLabel" Text="Opacity" />
-                            <Slider x:Name="OpacitySlider" ValueChanged="OnOpacityChanged" />
-                            <TextBlock x:Name="GlowLabel" Text="Charm glow" />
-                            <Slider x:Name="GlowSlider" ValueChanged="OnGlowChanged" />
-                        </StackPanel>
-
-                        <StackPanel Spacing="6">
-                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Where it hangs" />
-                            <ComboBox
-                                x:Name="AnchorChoice"
-                                MinWidth="260"
-                                SelectionChanged="OnAnchorChanged" />
-                            <TextBlock x:Name="PositionLabel" Text="Horizontal position" Margin="0,6,0,0" />
-                            <Slider x:Name="PositionSlider" ValueChanged="OnPositionChanged" />
+                    <StackPanel Margin="28,20,28,32" MaxWidth="720" HorizontalAlignment="Left" Spacing="20">
+                        <!-- Page Header -->
+                        <StackPanel Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                <FontIcon Glyph="&#xE713;" FontSize="24" Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
+                                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Appearance &amp; Behavior" FontWeight="SemiBold" />
+                            </StackPanel>
                             <TextBlock
                                 Style="{StaticResource CaptionTextBlockStyle}"
-                                Opacity="0.75"
-                                Text="Tip: Drag the top end of the rope on your screen to place it anywhere along the top edge."
-                                TextWrapping="Wrap" />
+                                Opacity="0.7"
+                                Text="Customize charm scale, rope reach, illumination effects, and desktop placement." />
                         </StackPanel>
 
-                        <StackPanel Spacing="8">
-                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Behaviour" />
-                            <ToggleSwitch
-                                x:Name="ShowToggle"
-                                Header="Show Hangly"
-                                Toggled="OnShowToggled" />
-                            <ToggleSwitch
-                                x:Name="LoginToggle"
-                                Header="Launch at login"
-                                Toggled="OnLoginToggled" />
-                        </StackPanel>
+                        <!-- Card 1: Display & Position -->
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="20">
+                            <StackPanel Spacing="16">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Width="38" Height="38"
+                                        CornerRadius="6"
+                                        Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <FontIcon Glyph="&#xE7F4;" FontSize="18" Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="Display &amp; Position" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="15" />
+                                        <TextBlock Text="Choose display monitor and desktop anchor alignment" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
+                                    </StackPanel>
+                                </Grid>
 
-                        <Button x:Name="ResetButton" Click="OnReset" Content="Restore defaults" />
+                                <Border BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0" />
+
+                                <!-- Monitor Selection -->
+                                <Grid ColumnSpacing="16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="Target Display" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Medium" />
+                                        <TextBlock Text="The screen Hangly hangs from" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.65" />
+                                    </StackPanel>
+                                    <ComboBox
+                                        x:Name="AnchorChoice"
+                                        Grid.Column="1"
+                                        MinWidth="180"
+                                        VerticalAlignment="Center"
+                                        SelectionChanged="OnAnchorChanged" />
+                                </Grid>
+
+                                <!-- Quick Position Presets -->
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Quick Presets" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold" Opacity="0.8" />
+                                    <Grid ColumnSpacing="10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button
+                                            x:Name="PresetLeftButton"
+                                            HorizontalAlignment="Stretch"
+                                            Click="OnPresetLeftClicked"
+                                            Padding="10,8">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                                                <FontIcon Glyph="&#xE896;" FontSize="13" />
+                                                <TextBlock Text="Top Left" FontSize="13" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button
+                                            x:Name="PresetCenterButton"
+                                            Grid.Column="1"
+                                            HorizontalAlignment="Stretch"
+                                            Click="OnPresetCenterClicked"
+                                            Padding="10,8">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                                                <FontIcon Glyph="&#xE8B7;" FontSize="13" />
+                                                <TextBlock Text="Top Center" FontSize="13" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button
+                                            x:Name="PresetRightButton"
+                                            Grid.Column="2"
+                                            HorizontalAlignment="Stretch"
+                                            Click="OnPresetRightClicked"
+                                            Padding="10,8">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                                                <FontIcon Glyph="&#xE898;" FontSize="13" />
+                                                <TextBlock Text="Top Right" FontSize="13" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </StackPanel>
+
+                                <!-- Continuous Horizontal Position Slider -->
+                                <StackPanel Spacing="6">
+                                    <Grid>
+                                        <StackPanel Spacing="2">
+                                            <TextBlock x:Name="PositionLabel" Text="Horizontal position" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Medium" />
+                                            <TextBlock Text="Freeform horizontal adjustment across the top edge" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.65" />
+                                        </StackPanel>
+                                        <Border
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="6"
+                                            Padding="8,2">
+                                            <TextBlock x:Name="PositionValueBadge" Text="50%" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold" />
+                                        </Border>
+                                    </Grid>
+                                    <Slider x:Name="PositionSlider" ValueChanged="OnPositionChanged" Margin="0,4,0,0" />
+                                </StackPanel>
+
+                                <!-- Drag Knot Tip -->
+                                <Border
+                                    Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="12,8">
+                                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                        <FontIcon Glyph="&#xE946;" FontSize="15" Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
+                                        <TextBlock
+                                            Style="{StaticResource CaptionTextBlockStyle}"
+                                            Opacity="0.85"
+                                            Text="Tip: Drag the knot at the very top of the cord directly on your desktop to position Hangly anywhere along your display."
+                                            TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Card 2: Size & Reach -->
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="20">
+                            <StackPanel Spacing="16">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Width="38" Height="38"
+                                        CornerRadius="6"
+                                        Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <FontIcon Glyph="&#xE790;" FontSize="18" Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="Dimensions &amp; Reach" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="15" />
+                                        <TextBlock Text="Scale of the hanging charms and cord length" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0" />
+
+                                <!-- Charm Size Slider -->
+                                <StackPanel Spacing="6">
+                                    <Grid>
+                                        <StackPanel Spacing="2">
+                                            <TextBlock x:Name="SizeLabel" Text="Charm size" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Medium" />
+                                            <TextBlock Text="Display scale for charms (0.5x to 2.0x)" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.65" />
+                                        </StackPanel>
+                                        <Border
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="6"
+                                            Padding="8,2">
+                                            <TextBlock x:Name="SizeValueBadge" Text="100%" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold" />
+                                        </Border>
+                                    </Grid>
+                                    <Slider x:Name="SizeSlider" ValueChanged="OnSizeChanged" Margin="0,4,0,0" />
+                                </StackPanel>
+
+                                <!-- Rope Length Slider -->
+                                <StackPanel Spacing="6">
+                                    <Grid>
+                                        <StackPanel Spacing="2">
+                                            <TextBlock x:Name="LengthLabel" Text="Rope length" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Medium" />
+                                            <TextBlock Text="Vertical reach and suspension length of the cord" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.65" />
+                                        </StackPanel>
+                                        <Border
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="6"
+                                            Padding="8,2">
+                                            <TextBlock x:Name="LengthValueBadge" Text="100%" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold" />
+                                        </Border>
+                                    </Grid>
+                                    <Slider x:Name="LengthSlider" ValueChanged="OnLengthChanged" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Card 3: Luminance & Effects -->
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="20">
+                            <StackPanel Spacing="16">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Width="38" Height="38"
+                                        CornerRadius="6"
+                                        Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <FontIcon Glyph="&#xEA3B;" FontSize="18" Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="Luminance &amp; Visual Effects" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="15" />
+                                        <TextBlock Text="Multi-tonal ambient glow and wallpaper blending" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0" />
+
+                                <!-- Charm Glow Slider -->
+                                <StackPanel Spacing="6">
+                                    <Grid>
+                                        <StackPanel Spacing="2">
+                                            <TextBlock x:Name="GlowLabel" Text="Charm radiant aura" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Medium" />
+                                            <TextBlock Text="Radiant ambient glow emitted around charms (0% to 200%)" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.65" />
+                                        </StackPanel>
+                                        <Border
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="6"
+                                            Padding="8,2">
+                                            <TextBlock x:Name="GlowValueBadge" Text="100%" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold" />
+                                        </Border>
+                                    </Grid>
+                                    <Slider x:Name="GlowSlider" ValueChanged="OnGlowChanged" Margin="0,4,0,0" />
+                                </StackPanel>
+
+                                <!-- Opacity Slider -->
+                                <StackPanel Spacing="6">
+                                    <Grid>
+                                        <StackPanel Spacing="2">
+                                            <TextBlock x:Name="OpacityLabel" Text="Overlay opacity" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Medium" />
+                                            <TextBlock Text="Overall transparency blending with desktop wallpaper" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.65" />
+                                        </StackPanel>
+                                        <Border
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="6"
+                                            Padding="8,2">
+                                            <TextBlock x:Name="OpacityValueBadge" Text="100%" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold" />
+                                        </Border>
+                                    </Grid>
+                                    <Slider x:Name="OpacitySlider" ValueChanged="OnOpacityChanged" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Card 4: Behavior & Actions -->
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="20">
+                            <StackPanel Spacing="16">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Width="38" Height="38"
+                                        CornerRadius="6"
+                                        Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <FontIcon Glyph="&#xE71D;" FontSize="18" Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="Behavior &amp; System" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="15" />
+                                        <TextBlock Text="Desktop overlay state and system startup" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0" />
+
+                                <!-- Show Hangly Toggle -->
+                                <Grid ColumnSpacing="16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="Show Hangly on Desktop" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Medium" />
+                                        <TextBlock Text="Render charms and physics rope actively on screen" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.65" />
+                                    </StackPanel>
+                                    <ToggleSwitch x:Name="ShowToggle" Grid.Column="1" Toggled="OnShowToggled" Margin="0" />
+                                </Grid>
+
+                                <!-- Launch at login Toggle -->
+                                <Grid ColumnSpacing="16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="Launch at Windows Startup" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Medium" />
+                                        <TextBlock Text="Hang charms automatically whenever you log into Windows" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.65" />
+                                    </StackPanel>
+                                    <ToggleSwitch x:Name="LoginToggle" Grid.Column="1" Toggled="OnLoginToggled" Margin="0" />
+                                </Grid>
+
+                                <Border BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0" />
+
+                                <!-- Restore Defaults Action -->
+                                <Grid ColumnSpacing="16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="Restore Appearance Defaults" Style="{StaticResource BodyTextBlockStyle}" FontWeight="Medium" />
+                                        <TextBlock Text="Revert size, length, glow, and position to default settings" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.65" />
+                                    </StackPanel>
+                                    <Button
+                                        x:Name="ResetButton"
+                                        Grid.Column="1"
+                                        Click="OnReset"
+                                        Content="Restore Defaults"
+                                        VerticalAlignment="Center" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 
                 <!-- About -->
                 <ScrollViewer x:Name="AboutPage" Visibility="Collapsed">
-                    <StackPanel Margin="24,16,24,24" MaxWidth="640" HorizontalAlignment="Left" Spacing="18">
-
-                        <StackPanel Orientation="Horizontal" Spacing="16">
-                            <Image
-                                x:Name="AppIcon"
-                                Width="72"
-                                Height="72"
-                                VerticalAlignment="Top" />
-                            <StackPanel Spacing="2">
-                                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Hangly" />
-                                <TextBlock
-                                    x:Name="VersionLine"
-                                    Opacity="0.8"
-                                    Style="{StaticResource BodyTextBlockStyle}" />
-                                <TextBlock
-                                    x:Name="CopyrightLine"
-                                    Opacity="0.7"
-                                    Style="{StaticResource CaptionTextBlockStyle}" />
-                            </StackPanel>
-                        </StackPanel>
-
-                        <TextBlock
-                            Opacity="0.8"
-                            Style="{StaticResource BodyTextBlockStyle}"
-                            TextWrapping="Wrap"
-                            Text="An ornament that hangs on your desktop. Made by hand, for no reason other than that it is nice to have something hanging there." />
-
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <HyperlinkButton x:Name="WebsiteLink" Content="Website" />
-                            <HyperlinkButton x:Name="GitHubLink" Content="GitHub" />
-                            <HyperlinkButton x:Name="ReleaseNotesLink" Content="Release notes" />
-                        </StackPanel>
-
-                        <!--
-                            The creator card. macOS ships CreatorCard and BuyCoffeeSheet,
-                            and a UPI QR in its bundle, so the coffee flow there is a sheet
-                            rather than a link. Every line of copy here is quoted from the
-                            macOS binary; see Docs/LIBRARY-AUDIT.md.
-                        -->
+                    <StackPanel Margin="28,20,28,32" MaxWidth="720" HorizontalAlignment="Left" Spacing="20">
+                        <!-- Hero Branding Card -->
                         <Border
-                            x:Name="CreatorCard"
-                            Padding="18"
                             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1"
-                            CornerRadius="8">
-                            <StackPanel Spacing="12">
-                                <TextBlock
-                                    Style="{StaticResource BodyStrongTextBlockStyle}"
-                                    Text="Support the Creator" />
-                                <TextBlock
-                                    Opacity="0.8"
-                                    Style="{StaticResource BodyTextBlockStyle}"
-                                    Text="Thank you for using Hangly."
-                                    TextWrapping="Wrap" />
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <Button
-                                        x:Name="CoffeeButton"
-                                        AutomationProperties.AutomationId="CoffeeButton"
-                                        Click="OnCoffeeClicked"
-                                        Content="Buy Creator a Coffee"
-                                        Style="{StaticResource AccentButtonStyle}" />
-                                    <HyperlinkButton
-                                        x:Name="InstagramLink"
-                                        Click="OnInstagramClicked"
-                                        Content="Instagram" />
-                                    <HyperlinkButton
-                                        x:Name="SuggestLink"
-                                        Click="OnSuggestClicked"
-                                        Content="Suggest a charm" />
+                            CornerRadius="10"
+                            Padding="24">
+                            <StackPanel Spacing="16">
+                                <Grid ColumnSpacing="20">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Width="72" Height="72"
+                                        CornerRadius="14"
+                                        Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1">
+                                        <Image
+                                            x:Name="AppIcon"
+                                            Width="56"
+                                            Height="56"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Hangly" FontWeight="Bold" FontSize="26" />
+                                            <Border
+                                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                CornerRadius="10"
+                                                Padding="8,2"
+                                                VerticalAlignment="Center">
+                                                <TextBlock
+                                                    x:Name="VersionLine"
+                                                    Foreground="White"
+                                                    FontSize="11"
+                                                    FontWeight="SemiBold"
+                                                    Text="v0.9.0" />
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock
+                                            x:Name="CopyrightLine"
+                                            Opacity="0.6"
+                                            Style="{StaticResource CaptionTextBlockStyle}" />
+                                        <TextBlock
+                                            Opacity="0.85"
+                                            Style="{StaticResource BodyTextBlockStyle}"
+                                            Text="An artisanal interactive desktop ornament engineered with authentic physics and dynamic lighting."
+                                            TextWrapping="Wrap"
+                                            Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,0,0" />
+
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <HyperlinkButton x:Name="WebsiteLink" Content="🌐 Website" />
+                                    <HyperlinkButton x:Name="GitHubLink" Content="💻 GitHub" />
+                                    <HyperlinkButton x:Name="ReleaseNotesLink" Content="📋 Release Notes" />
                                 </StackPanel>
                             </StackPanel>
                         </Border>
 
-                        <!--
-                            Getting back to the welcome. Somebody who dismissed it in three
-                            seconds had no way to see what Hangly does again, short of
-                            editing a settings file; it is the only place that explains
-                            where the app lives and how to reach it.
-                        -->
-                        <StackPanel Spacing="8">
-                            <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Help" />
-                            <Button
-                                x:Name="ShowWelcomeButton"
-                                AutomationProperties.AutomationId="ShowWelcomeButton"
-                                Click="OnShowWelcomeClicked"
-                                Content="Show welcome again"
-                                HorizontalAlignment="Left" />
-                            <TextBlock
-                                MaxWidth="560"
-                                Opacity="0.7"
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                Text="What Hangly is, where it lives, and how to get back to it."
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-
-                        <!-- Updates. A check is a GET for a static file, so this says
-                             what it found and nothing about who asked. -->
-                        <StackPanel Spacing="8">
-                            <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Updates" />
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Button
-                                    x:Name="CheckUpdateButton"
-                                    AutomationProperties.AutomationId="CheckUpdateButton"
-                                    Click="OnCheckForUpdates"
-                                    Content="Check for updates" />
-                                <Button
-                                    x:Name="InstallUpdateButton"
-                                    AutomationProperties.AutomationId="InstallUpdateButton"
-                                    Click="OnInstallUpdate"
-                                    Content="Install and restart"
-                                    Style="{StaticResource AccentButtonStyle}"
-                                    Visibility="Collapsed" />
-                            </StackPanel>
-                            <TextBlock
-                                x:Name="UpdateMessage"
-                                AutomationProperties.AutomationId="UpdateMessage"
-                                MaxWidth="560"
-                                Opacity="0.8"
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                TextWrapping="Wrap" />
-                            <!-- What changed, straight from the release. It appears only
-                                 when there is an update and the release said something,
-                                 because an empty "What's new" box reads as a broken one. -->
-                            <Border
-                                x:Name="UpdateNotesPanel"
-                                Padding="12"
-                                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="1"
-                                CornerRadius="6"
-                                MaxWidth="560"
-                                HorizontalAlignment="Left"
-                                Visibility="Collapsed">
-                                <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
-                                    <TextBlock
-                                        x:Name="UpdateNotes"
-                                        AutomationProperties.AutomationId="UpdateNotes"
-                                        Style="{StaticResource CaptionTextBlockStyle}"
-                                        TextWrapping="Wrap" />
-                                </ScrollViewer>
-                            </Border>
-                        </StackPanel>
-
-                        <!-- Milestones. The macOS model AppMilestones carries exactly
-                             charms, launches and secretsFound; swings is the one counter
-                             named only by the statistics label. -->
-                        <StackPanel Spacing="8">
-                            <TextBlock
-                                Style="{StaticResource BodyStrongTextBlockStyle}"
-                                Text="Milestones" />
-                            <Grid ColumnSpacing="12" RowSpacing="6">
+                        <!-- Milestones Showcase Grid -->
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Milestones" Style="{StaticResource SubtitleTextBlockStyle}" FontSize="18" FontWeight="SemiBold" />
+                            <Grid ColumnSpacing="12" RowSpacing="12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <TextBlock
-                                        x:Name="StatLaunches"
-                                        AutomationProperties.AutomationId="StatLaunches"
-                                        Style="{StaticResource SubtitleTextBlockStyle}" />
-                                    <TextBlock Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}" Text="Launches" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock
-                                        x:Name="StatCharms"
-                                        AutomationProperties.AutomationId="StatCharms"
-                                        Style="{StaticResource SubtitleTextBlockStyle}" />
-                                    <TextBlock Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}" Text="Charms hung" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock
-                                        x:Name="StatSwings"
-                                        AutomationProperties.AutomationId="StatSwings"
-                                        Style="{StaticResource SubtitleTextBlockStyle}" />
-                                    <TextBlock Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}" Text="Swings survived" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="3">
-                                    <TextBlock
-                                        x:Name="StatSecrets"
-                                        AutomationProperties.AutomationId="StatSecrets"
-                                        Style="{StaticResource SubtitleTextBlockStyle}" />
-                                    <TextBlock Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}" Text="Secrets found" />
-                                </StackPanel>
+                                <!-- Swings -->
+                                <Border
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="14">
+                                    <StackPanel Spacing="6" HorizontalAlignment="Center">
+                                        <FontIcon Glyph="&#xE8FD;" FontSize="20" Foreground="{ThemeResource AccentFillColorDefaultBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock
+                                            x:Name="StatSwings"
+                                            AutomationProperties.AutomationId="StatSwings"
+                                            Style="{StaticResource TitleTextBlockStyle}"
+                                            FontSize="22"
+                                            FontWeight="Bold"
+                                            HorizontalAlignment="Center" />
+                                        <TextBlock Opacity="0.65" Style="{StaticResource CaptionTextBlockStyle}" Text="Swings Survived" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                                <!-- Charms -->
+                                <Border
+                                    Grid.Column="1"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="14">
+                                    <StackPanel Spacing="6" HorizontalAlignment="Center">
+                                        <FontIcon Glyph="&#xE734;" FontSize="20" Foreground="{ThemeResource AccentFillColorDefaultBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock
+                                            x:Name="StatCharms"
+                                            AutomationProperties.AutomationId="StatCharms"
+                                            Style="{StaticResource TitleTextBlockStyle}"
+                                            FontSize="22"
+                                            FontWeight="Bold"
+                                            HorizontalAlignment="Center" />
+                                        <TextBlock Opacity="0.65" Style="{StaticResource CaptionTextBlockStyle}" Text="Charms Hung" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                                <!-- Launches -->
+                                <Border
+                                    Grid.Column="2"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="14">
+                                    <StackPanel Spacing="6" HorizontalAlignment="Center">
+                                        <FontIcon Glyph="&#xE7BA;" FontSize="20" Foreground="{ThemeResource AccentFillColorDefaultBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock
+                                            x:Name="StatLaunches"
+                                            AutomationProperties.AutomationId="StatLaunches"
+                                            Style="{StaticResource TitleTextBlockStyle}"
+                                            FontSize="22"
+                                            FontWeight="Bold"
+                                            HorizontalAlignment="Center" />
+                                        <TextBlock Opacity="0.65" Style="{StaticResource CaptionTextBlockStyle}" Text="App Launches" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                                <!-- Secrets -->
+                                <Border
+                                    Grid.Column="3"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="14">
+                                    <StackPanel Spacing="6" HorizontalAlignment="Center">
+                                        <FontIcon Glyph="&#xE728;" FontSize="20" Foreground="{ThemeResource AccentFillColorDefaultBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock
+                                            x:Name="StatSecrets"
+                                            AutomationProperties.AutomationId="StatSecrets"
+                                            Style="{StaticResource TitleTextBlockStyle}"
+                                            FontSize="22"
+                                            FontWeight="Bold"
+                                            HorizontalAlignment="Center" />
+                                        <TextBlock Opacity="0.65" Style="{StaticResource CaptionTextBlockStyle}" Text="Secrets Found" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
                             </Grid>
                         </StackPanel>
 
-                        <!-- Secrets. The button also pushes the rope, which is what the
-                             macOS description says it does. -->
-                        <StackPanel Spacing="8">
-                            <Button
-                                x:Name="SecretButton"
-                                AutomationProperties.AutomationId="SecretButton"
-                                AutomationProperties.HelpText="Reveals one of the app's secrets, and pushes the rope"
-                                Click="OnSecretClicked"
-                                Content="Tell me a secret" />
-                            <TextBlock
-                                x:Name="SecretText"
-                                AutomationProperties.AutomationId="SecretText"
-                                MaxWidth="560"
-                                Opacity="0.75"
-                                Style="{StaticResource BodyTextBlockStyle}"
-                                Text="No secret revealed yet"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
+                        <!-- Secret Revelation Card -->
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="18">
+                            <StackPanel Spacing="12">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="Hangly Secrets" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="15" />
+                                        <TextBlock Text="Discover hidden lore and give the cord a playful push" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" />
+                                    </StackPanel>
+                                    <Button
+                                        x:Name="SecretButton"
+                                        Grid.Column="1"
+                                        AutomationProperties.AutomationId="SecretButton"
+                                        AutomationProperties.HelpText="Reveals one of the app's secrets, and pushes the rope"
+                                        Click="OnSecretClicked"
+                                        Content="✨ Reveal a Secret"
+                                        Style="{StaticResource AccentButtonStyle}" />
+                                </Grid>
+                                <Border
+                                    Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="12">
+                                    <TextBlock
+                                        x:Name="SecretText"
+                                        AutomationProperties.AutomationId="SecretText"
+                                        Opacity="0.85"
+                                        Style="{StaticResource BodyTextBlockStyle}"
+                                        Text="No secret revealed yet. Click the button above to discover one!"
+                                        TextWrapping="Wrap" />
+                                </Border>
+                            </StackPanel>
+                        </Border>
 
-                        <!--
-                            The analytics section. PRIVACY.md promises this exists and says
-                            what it shows, so it is part of the argument for collecting
-                            anything at all rather than a debug panel.
-                        -->
+                        <!-- Support Card -->
+                        <Border
+                            x:Name="CreatorCard"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="18">
+                            <StackPanel Spacing="12">
+                                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Support the Creator" FontSize="15" />
+                                <TextBlock Opacity="0.8" Style="{StaticResource BodyTextBlockStyle}" Text="Thank you for using Hangly! If you enjoy having charms dancing on your desktop, consider supporting its development." TextWrapping="Wrap" />
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Button
+                                        x:Name="CoffeeButton"
+                                        AutomationProperties.AutomationId="CoffeeButton"
+                                        Click="OnCoffeeClicked"
+                                        Content="☕ Buy Creator a Coffee"
+                                        Style="{StaticResource AccentButtonStyle}" />
+                                    <HyperlinkButton x:Name="InstagramLink" Click="OnInstagramClicked" Content="📸 Instagram" />
+                                    <HyperlinkButton x:Name="SuggestLink" Click="OnSuggestClicked" Content="💡 Suggest a Charm" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Updates Card -->
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="18">
+                            <StackPanel Spacing="12">
+                                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Updates &amp; Help" FontSize="15" />
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Button
+                                        x:Name="CheckUpdateButton"
+                                        AutomationProperties.AutomationId="CheckUpdateButton"
+                                        Click="OnCheckForUpdates"
+                                        Content="Check for Updates" />
+                                    <Button
+                                        x:Name="InstallUpdateButton"
+                                        AutomationProperties.AutomationId="InstallUpdateButton"
+                                        Click="OnInstallUpdate"
+                                        Content="Install and Restart"
+                                        Style="{StaticResource AccentButtonStyle}"
+                                        Visibility="Collapsed" />
+                                    <Button
+                                        x:Name="ShowWelcomeButton"
+                                        AutomationProperties.AutomationId="ShowWelcomeButton"
+                                        Click="OnShowWelcomeClicked"
+                                        Content="Show Welcome Guide" />
+                                </StackPanel>
+                                <TextBlock
+                                    x:Name="UpdateMessage"
+                                    AutomationProperties.AutomationId="UpdateMessage"
+                                    Opacity="0.8"
+                                    Style="{StaticResource CaptionTextBlockStyle}"
+                                    TextWrapping="Wrap" />
+                                <Border
+                                    x:Name="UpdateNotesPanel"
+                                    Padding="12"
+                                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Visibility="Collapsed">
+                                    <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
+                                        <TextBlock
+                                            x:Name="UpdateNotes"
+                                            AutomationProperties.AutomationId="UpdateNotes"
+                                            Style="{StaticResource CaptionTextBlockStyle}"
+                                            TextWrapping="Wrap" />
+                                    </ScrollViewer>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Anonymous Analytics Expander -->
                         <muxc:Expander
                             x:Name="AnalyticsSection"
                             HorizontalAlignment="Stretch"
-                            Header="Anonymous analytics">
+                            Header="Anonymous Diagnostics &amp; Telemetry">
                             <StackPanel Margin="0,8,0,0" Spacing="12">
                                 <ToggleSwitch
                                     x:Name="AnalyticsToggle"
@@ -1053,7 +1431,7 @@
                                     Opacity="0.75"
                                     Style="{StaticResource CaptionTextBlockStyle}"
                                     TextWrapping="Wrap"
-                                    Text="Counts which features are used, so Hangly can be made better. Never your name, your files, or where your charm sits. Switching it off stops collection immediately and throws away the installation identifier." />
+                                    Text="Counts which features are used so Hangly can be continuously refined. Never tracks your name, your files, or where your charm sits. Switching it off stops collection immediately and purges local identifiers." />
 
                                 <Grid ColumnSpacing="16" RowSpacing="6">
                                     <Grid.ColumnDefinitions>

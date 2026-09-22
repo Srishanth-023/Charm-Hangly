@@ -531,7 +531,18 @@ public sealed class AppEnvironment : IDisposable
         overlay.FileDropped += OnFileDroppedOnCharm;
         overlay.CharmRightClicked += (slot) => OpenCustomize();
         overlay.CharmDoubleClicked += (slot) => OpenCustomize();
-        overlay.AnchorMoved += (offsetX) => store.UpdateOverlay(current => current with { OffsetX = offsetX });
+        overlay.AnchorMoved += (offsetX) =>
+        {
+            void Update() => store.UpdateOverlay(current => current with { OffsetX = offsetX });
+            if (dispatcherQueue != null && !dispatcherQueue.HasThreadAccess)
+            {
+                dispatcherQueue.TryEnqueue(Update);
+            }
+            else
+            {
+                Update();
+            }
+        };
         Diagnostics.Log("overlay window constructed");
 
         // Returns as soon as the frame loop is running. The window itself is created on

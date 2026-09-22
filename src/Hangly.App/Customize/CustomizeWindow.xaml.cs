@@ -214,8 +214,9 @@ public sealed partial class CustomizeWindow : Window
             [
                 (SizeSlider, 0.5, 2.0),
                 (LengthSlider, 0.5, 2.0),
-                (OpacitySlider, 0.2, 1.0),
+                (OpacitySlider, 0.1, 1.0),
                 (GlowSlider, 0.0, 2.0),
+                (SlotSizeSlider, 0.6, 1.6),
             ])
         {
             slider.Maximum = high;
@@ -225,9 +226,9 @@ public sealed partial class CustomizeWindow : Window
             slider.LargeChange = 0.1;
         }
 
-        PositionSlider.Minimum = 0.0;
         PositionSlider.Maximum = 1.0;
-        PositionSlider.StepFrequency = 0.01;
+        PositionSlider.Minimum = 0.0;
+        PositionSlider.StepFrequency = 0.005;
         PositionSlider.SmallChange = 0.01;
         PositionSlider.LargeChange = 0.05;
     }
@@ -658,6 +659,12 @@ public sealed partial class CustomizeWindow : Window
         OpacityLabel.Text = $"Opacity — {OpacitySlider.Value:P0}";
         GlowLabel.Text = $"Charm glow — {GlowSlider.Value:P0}";
         PositionLabel.Text = $"Horizontal position — {PositionSlider.Value:P0}";
+
+        if (SizeValueBadge != null) SizeValueBadge.Text = $"{SizeSlider.Value:P0}";
+        if (LengthValueBadge != null) LengthValueBadge.Text = $"{LengthSlider.Value:P0}";
+        if (OpacityValueBadge != null) OpacityValueBadge.Text = $"{OpacitySlider.Value:P0}";
+        if (GlowValueBadge != null) GlowValueBadge.Text = $"{GlowSlider.Value:P0}";
+        if (PositionValueBadge != null) PositionValueBadge.Text = $"{PositionSlider.Value:P0}";
     }
 
     /// <summary>One button per charm on the cord; clicking one says which a pick replaces.</summary>
@@ -1207,9 +1214,21 @@ public sealed partial class CustomizeWindow : Window
 
     private void OnAnalyticsChanged()
     {
-        if (AboutPage.Visibility == Visibility.Visible)
+        void Action()
         {
-            LoadAnalytics();
+            if (AboutPage.Visibility == Visibility.Visible)
+            {
+                LoadAnalytics();
+            }
+        }
+
+        if (DispatcherQueue != null && !DispatcherQueue.HasThreadAccess)
+        {
+            DispatcherQueue.TryEnqueue(Action);
+        }
+        else
+        {
+            Action();
         }
     }
 
@@ -1335,6 +1354,21 @@ public sealed partial class CustomizeWindow : Window
 
         OverlayAnchor anchor = Enum.GetValues<OverlayAnchor>()[AnchorChoice.SelectedIndex];
         store.UpdateOverlay(overlay => overlay with { Anchor = anchor, OffsetX = 0 });
+    }
+
+    private void OnPresetLeftClicked(object sender, RoutedEventArgs args)
+    {
+        store.UpdateOverlay(overlay => overlay with { Anchor = OverlayAnchor.TopLeading, OffsetX = 0 });
+    }
+
+    private void OnPresetCenterClicked(object sender, RoutedEventArgs args)
+    {
+        store.UpdateOverlay(overlay => overlay with { Anchor = OverlayAnchor.TopCenter, OffsetX = 0 });
+    }
+
+    private void OnPresetRightClicked(object sender, RoutedEventArgs args)
+    {
+        store.UpdateOverlay(overlay => overlay with { Anchor = OverlayAnchor.TopTrailing, OffsetX = 0 });
     }
 
     private void OnPositionChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs args)
@@ -1538,5 +1572,15 @@ public sealed partial class CustomizeWindow : Window
         BuildFilterChips();
     }
 
-    private void OnStoreChanged(AppSettings settings) => Load();
+    private void OnStoreChanged(AppSettings settings)
+    {
+        if (DispatcherQueue != null && !DispatcherQueue.HasThreadAccess)
+        {
+            DispatcherQueue.TryEnqueue(() => Load());
+        }
+        else
+        {
+            Load();
+        }
+    }
 }

@@ -29,3 +29,4 @@ Thumbs.db
 desktop.ini
 
 .github/
+__pycache__/

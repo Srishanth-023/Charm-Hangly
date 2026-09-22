@@ -66,6 +66,7 @@ public sealed class TrayIcon : IDisposable
     private const uint TpmRightbutton = 0x0002;
     private const uint TpmReturncmd = 0x0100;
 
+    private static readonly List<WndProc> KeptProcedures = new();
     private readonly WndProc procedure;
     private readonly List<Action> commands = [];
     private IntPtr window;
@@ -95,9 +96,28 @@ public sealed class TrayIcon : IDisposable
     {
         this.tooltip = tooltip;
         procedure = HandleMessage;
-        window = CreateMessageWindow();
-        icon = LoadApplicationIcon();
-        Register(tooltip);
+        KeptProcedures.Add(procedure);
+        try
+        {
+            window = CreateMessageWindow();
+            icon = LoadApplicationIcon();
+            Register(tooltip);
+        }
+        catch
+        {
+            if (window != IntPtr.Zero)
+            {
+                DestroyWindow(window);
+                window = IntPtr.Zero;
+            }
+            if (icon != IntPtr.Zero)
+            {
+                DestroyIcon(icon);
+                icon = IntPtr.Zero;
+            }
+            KeptProcedures.Remove(procedure);
+            throw;
+        }
     }
 
     private IntPtr CreateMessageWindow()
@@ -273,7 +293,6 @@ public sealed class TrayIcon : IDisposable
             }
 
             case WmDestroy:
-                PostQuitMessage(0);
                 return IntPtr.Zero;
 
             default:
@@ -362,6 +381,7 @@ public sealed class TrayIcon : IDisposable
             window = IntPtr.Zero;
         }
 
+        KeptProcedures.Remove(procedure);
         GC.SuppressFinalize(this);
     }
 

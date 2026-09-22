@@ -10,6 +10,7 @@ using Hangly.App.Services;
 using Microsoft.Graphics.Canvas;
 using System.Runtime.InteropServices;
 using Windows.Graphics.DirectX;
+using WinRT;
 
 namespace Hangly.App.Overlay;
 
@@ -57,6 +58,9 @@ internal sealed class LayeredOverlaySurface : IDisposable
     // See Present.
     private Windows.Storage.Streams.Buffer? transfer;
     private byte[] scratch = [];
+    private unsafe byte* rawBufferPtr;
+    private IntPtr byteAccessPtr;
+    private int bufferByteCount;
 
     private CanvasRenderTarget? target;
     private int pixelWidth;
@@ -154,11 +158,35 @@ internal sealed class LayeredOverlaySurface : IDisposable
         // against a frame budget of 8.3 ms. Reusing the buffer removes the allocation
         // entirely.
         int byteCount = widthInPixels * heightInPixels * 4;
+        bufferByteCount = byteCount;
         transfer = new Windows.Storage.Streams.Buffer((uint)byteCount)
         {
             Length = (uint)byteCount,
         };
         scratch = new byte[byteCount];
+
+        unsafe
+        {
+            try
+            {
+                IntPtr unk = ((IWinRTObject)transfer).NativeObject.ThisPtr;
+                var guid = new Guid("5B0D3235-4DBA-4D44-865E-5F1D0E4FD10D");
+                if (Marshal.QueryInterface(unk, in guid, out byteAccessPtr) == 0 && byteAccessPtr != IntPtr.Zero)
+                {
+                    void** vtable = *(void***)byteAccessPtr;
+                    delegate* unmanaged[Stdcall]<IntPtr, byte**, int> getBuffer = (delegate* unmanaged[Stdcall]<IntPtr, byte**, int>)vtable[3];
+                    byte* pBuf = null;
+                    if (getBuffer(byteAccessPtr, &pBuf) == 0)
+                    {
+                        rawBufferPtr = pBuf;
+                    }
+                }
+            }
+            catch
+            {
+                rawBufferPtr = null;
+            }
+        }
 
         var header = new NativeMethods.BitmapInfoHeader
         {
@@ -219,19 +247,23 @@ internal sealed class LayeredOverlaySurface : IDisposable
             draw(session);
         }
 
-        // Into the reused buffer, out through a reader, and into the DIB. Two copies
-        // where one would do, and the second one is the price of not being able to take
-        // the buffer's address: IBufferByteAccess is the only route to it, and CsWinRT
-        // will not cast a projected WinRT object to a ComImport interface — that was
-        // tried, and threw InvalidCastException at the first frame. The copy is cheap
-        // next to what it replaces. It is bandwidth, not garbage.
+        // Direct zero-copy memory transfer into the DIB section. If direct buffer access
+        // is available, we copy directly with unmanaged SIMD MemoryCopy (zero garbage allocations).
+        // If unavailable, fall back cleanly to DataReader.
         target.GetPixelBytes(transfer);
-        using (var reader = Windows.Storage.Streams.DataReader.FromBuffer(transfer))
+        unsafe
         {
-            reader.ReadBytes(scratch);
+            if (rawBufferPtr != null && pixels != IntPtr.Zero)
+            {
+                System.Buffer.MemoryCopy(rawBufferPtr, (void*)pixels, bufferByteCount, bufferByteCount);
+            }
+            else
+            {
+                using var reader = Windows.Storage.Streams.DataReader.FromBuffer(transfer);
+                reader.ReadBytes(scratch);
+                Marshal.Copy(scratch, 0, pixels, scratch.Length);
+            }
         }
-
-        Marshal.Copy(scratch, 0, pixels, scratch.Length);
 
         var size = new NativeMethods.Size { Width = pixelWidth, Height = pixelHeight };
         var source = new NativeMethods.Point { X = 0, Y = 0 };
@@ -392,6 +424,17 @@ internal sealed class LayeredOverlaySurface : IDisposable
         {
             NativeMethods.DeleteObject(bitmap);
             bitmap = IntPtr.Zero;
+        }
+
+        if (byteAccessPtr != IntPtr.Zero)
+        {
+            Marshal.Release(byteAccessPtr);
+            byteAccessPtr = IntPtr.Zero;
+        }
+
+        unsafe
+        {
+            rawBufferPtr = null;
         }
 
         pixels = IntPtr.Zero;
