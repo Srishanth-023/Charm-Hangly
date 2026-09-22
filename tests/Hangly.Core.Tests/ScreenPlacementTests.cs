@@ -132,4 +132,25 @@ public class ScreenPlacementTests
 
         Assert.Equal(proposed, ScreenPlacement.ClampAnchorPoint(proposed, Rect.Zero));
     }
+
+    [Fact(DisplayName = "OffsetXForMidX and MidXForOffsetX round-trip exactly")]
+    public void OffsetCoordinateConversionsRoundTrip()
+    {
+        double scale = 1.25;
+        double edgeInset = 20;
+
+        foreach (OverlayAnchor anchor in Enum.GetValues<OverlayAnchor>())
+        {
+            double targetMidX = 750;
+            double offsetX = ScreenPlacement.OffsetXForMidX(targetMidX, anchor, Overlay, Primary, edgeInset, scale);
+            double calculatedMidX = ScreenPlacement.MidXForOffsetX(offsetX, anchor, Overlay, Primary, edgeInset, scale);
+
+            Assert.Equal(targetMidX, calculatedMidX, 6);
+
+            // Also test that with offsetX = 0, Frame.MidX matches MidXForOffsetX(0, ...)
+            Rect frame = ScreenPlacement.Frame(Overlay, anchor, Primary, edgeInset: edgeInset);
+            double baseMidX = ScreenPlacement.MidXForOffsetX(0, anchor, Overlay, Primary, edgeInset, 1.0);
+            Assert.Equal(frame.MidX, baseMidX, 6);
+        }
+    }
 }

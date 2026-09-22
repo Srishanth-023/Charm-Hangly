@@ -12,6 +12,7 @@ using Hangly.Core.Analytics;
 using Hangly.Core.Import;
 using Hangly.Core.Models;
 using Hangly.Core.Settings;
+using Hangly.App.Overlay;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -210,7 +211,12 @@ public sealed partial class CustomizeWindow : Window
     private void ConfigureSliders()
     {
         foreach ((Slider slider, double low, double high) in ((Slider, double, double)[])
-            [(SizeSlider, 0.5, 2.0), (LengthSlider, 0.5, 2.0), (OpacitySlider, 0.2, 1.0)])
+            [
+                (SizeSlider, 0.5, 2.0),
+                (LengthSlider, 0.5, 2.0),
+                (OpacitySlider, 0.2, 1.0),
+                (GlowSlider, 0.0, 2.0),
+            ])
         {
             slider.Maximum = high;
             slider.Minimum = low;
@@ -218,6 +224,12 @@ public sealed partial class CustomizeWindow : Window
             slider.SmallChange = 0.05;
             slider.LargeChange = 0.1;
         }
+
+        PositionSlider.Minimum = 0.0;
+        PositionSlider.Maximum = 1.0;
+        PositionSlider.StepFrequency = 0.01;
+        PositionSlider.SmallChange = 0.01;
+        PositionSlider.LargeChange = 0.05;
     }
 
     /// <summary>
@@ -608,6 +620,23 @@ public sealed partial class CustomizeWindow : Window
             SizeSlider.Value = overlay.CharmSize;
             LengthSlider.Value = overlay.RopeLength;
             OpacitySlider.Value = overlay.Opacity;
+            GlowSlider.Value = overlay.CharmGlow;
+
+            DisplayInfo display = DisplayObserver.DisplayAt(overlay.DisplayIndex);
+            Hangly.Core.Geometry.Size canvas = OverlayMetrics.CanvasSize(overlay.CharmSize, overlay.RopeLength);
+            var pixels = new Hangly.Core.Geometry.Size(canvas.Width * display.Scale, canvas.Height * display.Scale);
+            double midX = ScreenPlacement.MidXForOffsetX(
+                overlay.OffsetX,
+                overlay.Anchor,
+                pixels,
+                display.WorkArea,
+                OverlayMetrics.EdgeInset * display.Scale,
+                display.Scale);
+            double fraction = display.WorkArea.Width > 0
+                ? Math.Clamp((midX - display.WorkArea.Left) / display.WorkArea.Width, 0.0, 1.0)
+                : 0.5;
+            PositionSlider.Value = fraction;
+
             UpdateSliderLabels();
 
             ShowToggle.IsOn = overlay.IsEnabled;
@@ -627,6 +656,8 @@ public sealed partial class CustomizeWindow : Window
         SizeLabel.Text = $"Charm size — {SizeSlider.Value:P0}";
         LengthLabel.Text = $"Rope length — {LengthSlider.Value:P0}";
         OpacityLabel.Text = $"Opacity — {OpacitySlider.Value:P0}";
+        GlowLabel.Text = $"Charm glow — {GlowSlider.Value:P0}";
+        PositionLabel.Text = $"Horizontal position — {PositionSlider.Value:P0}";
     }
 
     /// <summary>One button per charm on the cord; clicking one says which a pick replaces.</summary>
@@ -1303,7 +1334,37 @@ public sealed partial class CustomizeWindow : Window
         }
 
         OverlayAnchor anchor = Enum.GetValues<OverlayAnchor>()[AnchorChoice.SelectedIndex];
-        store.UpdateOverlay(overlay => overlay with { Anchor = anchor });
+        store.UpdateOverlay(overlay => overlay with { Anchor = anchor, OffsetX = 0 });
+    }
+
+    private void OnPositionChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs args)
+    {
+        UpdateSliderLabels();
+        if (!isLoading)
+        {
+            OverlaySettings overlay = Overlay;
+            DisplayInfo display = DisplayObserver.DisplayAt(overlay.DisplayIndex);
+            Hangly.Core.Geometry.Size canvas = OverlayMetrics.CanvasSize(overlay.CharmSize, overlay.RopeLength);
+            var pixels = new Hangly.Core.Geometry.Size(canvas.Width * display.Scale, canvas.Height * display.Scale);
+            double targetMidX = display.WorkArea.Left + (display.WorkArea.Width * PositionSlider.Value);
+            double newOffsetX = ScreenPlacement.OffsetXForMidX(
+                targetMidX,
+                overlay.Anchor,
+                pixels,
+                display.WorkArea,
+                OverlayMetrics.EdgeInset * display.Scale,
+                display.Scale);
+            store.UpdateOverlay(curr => curr with { OffsetX = newOffsetX });
+        }
+    }
+
+    private void OnGlowChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs args)
+    {
+        UpdateSliderLabels();
+        if (!isLoading)
+        {
+            store.UpdateOverlay(overlay => overlay with { CharmGlow = GlowSlider.Value });
+        }
     }
 
     private void OnSizeChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs args)

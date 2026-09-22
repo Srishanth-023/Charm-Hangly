@@ -39,6 +39,15 @@ public sealed class RopeRenderer
     /// <summary>What the charms hanging on the rope are, from the anchor down.</summary>
     public IReadOnlyList<CharmDescriptor> Charms { get; set; } = [];
 
+    /// <summary>How much the charms glow, 0.0 (off) to 2.0 (vibrant). Default is 1.0.</summary>
+    public double CharmGlow { get; set; } = 1.0;
+
+    /// <summary>Whether the top knot/anchor is hovered by the mouse cursor.</summary>
+    public bool IsAnchorHovered { get; set; }
+
+    /// <summary>Whether the top knot/anchor is actively being dragged.</summary>
+    public bool IsAnchorDragging { get; set; }
+
     public void Draw(CanvasDrawingSession session, RopeSnapshot snapshot, RopeStyle style)
     {
         if (snapshot.Points.Count < 2)
@@ -69,6 +78,7 @@ public sealed class RopeRenderer
         }
         DrawBeads(session, snapshot, appearance);
         DrawCharms(session, snapshot);
+        DrawAnchorKnot(session, snapshot.Points[0], appearance, width);
     }
 
     /// <summary>
@@ -692,7 +702,7 @@ public sealed class RopeRenderer
         CharmDescriptor? descriptor,
         CharmPlacement placement)
     {
-        if (descriptor is null || placement.Radius <= 0)
+        if (descriptor is null || placement.Radius <= 0 || CharmGlow <= 0.01)
         {
             return;
         }
@@ -705,30 +715,26 @@ public sealed class RopeRenderer
         brush.RadiusY = reach;
 
         session.FillCircle(ToVector(placement.Center), reach, brush);
+
+        if (CharmGlow >= 0.25)
+        {
+            CanvasRadialGradientBrush innerBrush = InnerGlowFor(session, descriptor);
+            var innerReach = (float)(placement.Radius * 1.35);
+            innerBrush.Center = ToVector(placement.Center);
+            innerBrush.RadiusX = innerReach;
+            innerBrush.RadiusY = innerReach;
+            session.FillCircle(ToVector(placement.Center), innerReach, innerBrush);
+        }
     }
 
     /// <summary>The glow brush for one charm, made once and kept.</summary>
-    /// <remarks>
-    /// Cached because a gradient brush is a device resource and building three of them
-    /// sixty times a second is exactly the per-frame cost this renderer is written to
-    /// avoid. Keyed by the charm rather than by its colour, because the rope carries at
-    /// most three and a charm is what changes.
-    ///
-    /// <para>The device is held alongside them so a lost device is noticed: the brushes
-    /// belong to it, and one that outlived its device would fail on the next frame rather
-    /// than be rebuilt.</para>
-    /// </remarks>
     private CanvasRadialGradientBrush GlowFor(CanvasDrawingSession session, CharmDescriptor descriptor)
     {
-        if (!ReferenceEquals(glowDevice, session.Device))
+        if (!ReferenceEquals(glowDevice, session.Device) || Math.Abs(lastGlowLevel - CharmGlow) > 0.005)
         {
-            foreach (CanvasRadialGradientBrush stale in glows.Values)
-            {
-                stale.Dispose();
-            }
-
-            glows.Clear();
+            ClearGlows();
             glowDevice = session.Device;
+            lastGlowLevel = CharmGlow;
         }
 
         if (glows.TryGetValue(descriptor.Id, out CanvasRadialGradientBrush? brush))
@@ -736,49 +742,98 @@ public sealed class RopeRenderer
             return brush;
         }
 
-        // Shaped rather than linear. A straight ramp from the centre to the full reach
-        // matched macOS where it meets the charm and then would not let go: measured
-        // against the same shield, ours was still nine counts dark sixty-five points out
-        // where macOS was back to the colour of the window. The stops keep the ramp as it
-        // was up to the charm's own edge and then bring it down, so the glow dies about a
-        // third of a radius past the artwork, which is where macOS's dies.
         CharmColor tint = descriptor.Palette.Primary;
+        CharmColor lit = descriptor.Palette.Light;
+        CharmColor aura = CharmColor.Interpolate(tint, lit, 0.35);
+
+        double maxAlpha = Math.Clamp(0.52 * CharmGlow, 0.0, 0.95);
         CanvasGradientStop[] stops =
         [
-            new() { Position = 0, Color = ToColor(tint, GlowOpacity) },
-            new() { Position = CharmEdge, Color = ToColor(tint, GlowOpacity * 0.41) },
-            new() { Position = 0.70f, Color = ToColor(tint, GlowOpacity * 0.17) },
-            new() { Position = 0.79f, Color = ToColor(tint, 0) },
+            new() { Position = 0, Color = ToColor(aura, maxAlpha * 0.95) },
+            new() { Position = CharmEdge, Color = ToColor(aura, maxAlpha * 0.72) },
+            new() { Position = (float)(CharmEdge + ((1 - CharmEdge) * 0.28)), Color = ToColor(tint, maxAlpha * 0.42) },
+            new() { Position = (float)(CharmEdge + ((1 - CharmEdge) * 0.60)), Color = ToColor(tint, maxAlpha * 0.18) },
+            new() { Position = 0.92f, Color = ToColor(tint, maxAlpha * 0.04) },
             new() { Position = 1, Color = ToColor(tint, 0) },
         ];
 
         brush = new CanvasRadialGradientBrush(session, stops);
-
         glows[descriptor.Id] = brush;
         return brush;
     }
 
-    /// <summary>
-    /// How much of the charm's colour reaches the desktop at the centre of the glow.
-    /// </summary>
-    /// <remarks>
-    /// Chosen to land on the macOS profile in the remarks on
-    /// <see cref="DrawAmbientGlow"/> once the drop shadow is added to it, not picked for
-    /// looking about right. The gradient is linear in alpha, so what shows just outside
-    /// the charm is this multiplied by the fraction of the reach still to go.
-    /// </remarks>
-    private const double GlowOpacity = 0.19;
+    private CanvasRadialGradientBrush InnerGlowFor(CanvasDrawingSession session, CharmDescriptor descriptor)
+    {
+        if (innerGlows.TryGetValue(descriptor.Id, out CanvasRadialGradientBrush? brush))
+        {
+            return brush;
+        }
+
+        CharmColor lit = descriptor.Palette.Light;
+        float innerEdge = (float)(1.0 / 1.35);
+        double maxAlpha = Math.Clamp(0.38 * CharmGlow, 0.0, 0.85);
+
+        CanvasGradientStop[] stops =
+        [
+            new() { Position = 0, Color = ToColor(lit, maxAlpha * 0.8) },
+            new() { Position = innerEdge, Color = ToColor(lit, maxAlpha * 0.7) },
+            new() { Position = (float)(innerEdge + ((1 - innerEdge) * 0.5)), Color = ToColor(lit, maxAlpha * 0.25) },
+            new() { Position = 1.0f, Color = ToColor(lit, 0) },
+        ];
+
+        brush = new CanvasRadialGradientBrush(session, stops);
+        innerGlows[descriptor.Id] = brush;
+        return brush;
+    }
+
+    private void ClearGlows()
+    {
+        foreach (CanvasRadialGradientBrush stale in glows.Values)
+        {
+            stale.Dispose();
+        }
+        glows.Clear();
+
+        foreach (CanvasRadialGradientBrush stale in innerGlows.Values)
+        {
+            stale.Dispose();
+        }
+        innerGlows.Clear();
+    }
+
+    /// <summary>Draws the top mounting bracket/knot at the ceiling where the rope is anchored.</summary>
+    private void DrawAnchorKnot(
+        CanvasDrawingSession session,
+        Vec2 anchorPoint,
+        RopeAppearance appearance,
+        double width)
+    {
+        float cx = (float)anchorPoint.X;
+        float bracketWidth = (float)Math.Max(width * 1.8, 16.0);
+        float bracketHeight = 8.0f;
+        var bracketRect = new Windows.Foundation.Rect(cx - (bracketWidth / 2), 0, bracketWidth, bracketHeight);
+
+        if (IsAnchorHovered || IsAnchorDragging)
+        {
+            float haloRadius = bracketWidth * 1.4f;
+            Color haloColor = ToColor(appearance.Palette.Light, IsAnchorDragging ? 0.55 : 0.35);
+            session.FillCircle(cx, bracketHeight / 2, haloRadius, haloColor);
+        }
+
+        var shadowRect = new Windows.Foundation.Rect(bracketRect.X, bracketRect.Y + 1.5, bracketRect.Width, bracketRect.Height);
+        session.FillRoundedRectangle(shadowRect, 3, 3, Color.FromArgb(70, 0, 0, 0));
+        session.FillRoundedRectangle(bracketRect, 3, 3, ToColor(appearance.Palette.Primary, 1.0));
+        session.DrawRoundedRectangle(bracketRect, 3, 3, ToColor(appearance.Palette.Light, 0.85), 1.2f);
+        session.FillCircle(cx, bracketHeight / 2, 2.0f, ToColor(appearance.Palette.Light, 0.95));
+    }
 
     /// <summary>Where the charm's own edge falls inside the glow, as a fraction of it.</summary>
-    /// <remarks>
-    /// The glow reaches <c>CharmHaloExtent</c> radii, so the artwork ends exactly one over
-    /// that. Written as the reciprocal rather than as 0.588 so it follows the layout's
-    /// number if that ever moves.
-    /// </remarks>
     private const float CharmEdge = (float)(1 / RopeConfiguration.Layout.CharmHaloExtent);
 
     private readonly Dictionary<string, CanvasRadialGradientBrush> glows = [];
+    private readonly Dictionary<string, CanvasRadialGradientBrush> innerGlows = [];
     private CanvasDevice? glowDevice;
+    private double lastGlowLevel = -1;
 
     private static System.Numerics.Vector2 ToVector(Vec2 point) => new((float)point.X, (float)point.Y);
 

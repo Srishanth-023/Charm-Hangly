@@ -790,6 +790,8 @@
                             <Slider x:Name="LengthSlider" ValueChanged="OnLengthChanged" />
                             <TextBlock x:Name="OpacityLabel" Text="Opacity" />
                             <Slider x:Name="OpacitySlider" ValueChanged="OnOpacityChanged" />
+                            <TextBlock x:Name="GlowLabel" Text="Charm glow" />
+                            <Slider x:Name="GlowSlider" ValueChanged="OnGlowChanged" />
                         </StackPanel>
 
                         <StackPanel Spacing="6">
@@ -798,6 +800,13 @@
                                 x:Name="AnchorChoice"
                                 MinWidth="260"
                                 SelectionChanged="OnAnchorChanged" />
+                            <TextBlock x:Name="PositionLabel" Text="Horizontal position" Margin="0,6,0,0" />
+                            <Slider x:Name="PositionSlider" ValueChanged="OnPositionChanged" />
+                            <TextBlock
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Opacity="0.75"
+                                Text="Tip: Drag the top end of the rope on your screen to place it anywhere along the top edge."
+                                TextWrapping="Wrap" />
                         </StackPanel>
 
                         <StackPanel Spacing="8">

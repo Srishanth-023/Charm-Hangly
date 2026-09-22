@@ -23,6 +23,9 @@ public sealed record OverlaySettings
     /// <summary>How visible the charm is, 0.2 to 1.</summary>
     public double Opacity { get; init; } = 1.0;
 
+    /// <summary>How much the charms glow, 0 (none) to 2 (vibrant). 1.0 on a new install.</summary>
+    public double CharmGlow { get; init; } = 1.0;
+
     /// <summary>How large the charm is drawn, as a multiple of the shipped size.</summary>
     /// <summary>145% on a new install: see <see cref="CharmCatalog.FirstRunId"/>.</summary>
     public double CharmSize { get; init; } = 1.45;
@@ -106,6 +109,7 @@ public sealed record OverlaySettings
         other is not null
         && IsEnabled == other.IsEnabled
         && Opacity.Equals(other.Opacity)
+        && CharmGlow.Equals(other.CharmGlow)
         && CharmSize.Equals(other.CharmSize)
         && RopeLength.Equals(other.RopeLength)
         && Anchor == other.Anchor
@@ -122,6 +126,7 @@ public sealed record OverlaySettings
         var hash = default(HashCode);
         hash.Add(IsEnabled);
         hash.Add(Opacity);
+        hash.Add(CharmGlow);
         hash.Add(CharmSize);
         hash.Add(RopeLength);
         hash.Add(Anchor);
@@ -151,6 +156,7 @@ public sealed record OverlaySettings
     public OverlaySettings Clamped() => this with
     {
         Opacity = Math.Clamp(Opacity, 0.2, 1.0),
+        CharmGlow = Math.Clamp(CharmGlow, 0.0, 2.5),
         CharmSize = Math.Clamp(CharmSize, 0.5, 2.0),
         RopeLength = Math.Clamp(RopeLength, 0.5, 2.0),
         OffsetX = Math.Clamp(OffsetX, -4000, 4000),

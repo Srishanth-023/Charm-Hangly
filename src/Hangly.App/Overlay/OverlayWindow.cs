@@ -85,6 +85,10 @@ public sealed class OverlayWindow : IDisposable
     private Vec2 lastCursor;
     private Rect frame;
     private double scale = 1;
+    private bool isDraggingAnchor;
+    private double anchorDragGrabOffset;
+    private double lastDesktopCursorX;
+    private bool isOverAnchor;
 
     public OverlayWindow(
         CanvasDevice device,
@@ -125,6 +129,9 @@ public sealed class OverlayWindow : IDisposable
 
     /// <summary>The charm was double-clicked: which place.</summary>
     public event Action<int>? CharmDoubleClicked;
+
+    /// <summary>The top anchor was dragged to a new horizontal position: new OffsetX in points.</summary>
+    public event Action<double>? AnchorMoved;
 
     /// <summary>Changes what hangs on the cord, without rebuilding the window.</summary>
     /// <remarks>
@@ -435,8 +442,8 @@ public sealed class OverlayWindow : IDisposable
         // the clock keeps running because the same tick is what notices the cursor
         // arriving over the charm. A layered window keeps the last frame it was given, so
         // not presenting leaves the settled rope on screen rather than blanking it.
-        clock.SetThrottled(rope.IsSleeping && !rope.IsDragging);
-        if (!rope.IsSleeping || rope.IsDragging)
+        clock.SetThrottled(rope.IsSleeping && !rope.IsDragging && !isDraggingAnchor);
+        if (!rope.IsSleeping || rope.IsDragging || isDraggingAnchor)
         {
             Draw();
         }
@@ -472,10 +479,16 @@ public sealed class OverlayWindow : IDisposable
         lastSide = side;
     }
 
-    private void Draw() => surface.Present(
-        session => renderer.Draw(session, rope.Snapshot(), rope.Style),
-        new NativeMethods.Point { X = (int)Math.Round(frame.Left), Y = (int)Math.Round(frame.Top) },
-        settings.Opacity);
+    private void Draw()
+    {
+        renderer.CharmGlow = settings.CharmGlow;
+        renderer.IsAnchorHovered = isOverAnchor;
+        renderer.IsAnchorDragging = isDraggingAnchor;
+        surface.Present(
+            session => renderer.Draw(session, rope.Snapshot(), rope.Style),
+            new NativeMethods.Point { X = (int)Math.Round(frame.Left), Y = (int)Math.Round(frame.Top) },
+            settings.Opacity);
+    }
 
     private void PollPointer()
     {
@@ -497,16 +510,19 @@ public sealed class OverlayWindow : IDisposable
         hoveredCharm = rope.CharmIndexAt(location);
         bool overCharm = hoveredCharm is not null;
 
+        // Top anchor knot / grab region: within top margin and rope anchor X
+        isOverAnchor = location.Y >= -10.0 && location.Y <= 38.0 && Math.Abs(location.X - rope.Anchor.X) <= 26.0;
+
         // Also check if the cursor is near the cord so interactions feel natural.
         bool overCord = Math.Abs(location.X - rope.Anchor.X) < 22.0 &&
                         location.Y >= 0 &&
                         location.Y <= rope.Configuration.TotalLength + 30.0;
-        bool isInteractive = overCharm || overCord;
+        bool isInteractive = overCharm || overCord || isOverAnchor;
 
         // The cursor may only pass through when it is not over the charm or rope — and never
         // mid-drag, or letting go while moving fast would drop the charm the instant the
         // pointer outran it.
-        SetClickThrough(!isInteractive && !rope.IsDragging);
+        SetClickThrough(!isInteractive && !rope.IsDragging && !isDraggingAnchor);
 
         // Right-click on charm or rope opens the interface (Settings/Customize).
         if (isRButtonDown && !wasRButtonDown && isInteractive)
@@ -516,15 +532,67 @@ public sealed class OverlayWindow : IDisposable
 
         if (isButtonDown && !wasButtonDown && isInteractive)
         {
-            long now = Environment.TickCount64;
-            if (now - lastLeftClickTime < 350 && (location - lastLeftClickPos).Magnitude < 20)
+            if (isOverAnchor)
             {
-                CharmDoubleClicked?.Invoke(hoveredCharm ?? 0);
+                isDraggingAnchor = true;
+                anchorDragGrabOffset = cursor.X - (frame.Left + (frame.Width / 2));
+                lastDesktopCursorX = cursor.X;
             }
-            lastLeftClickTime = now;
-            lastLeftClickPos = location;
+            else
+            {
+                long now = Environment.TickCount64;
+                if (now - lastLeftClickTime < 350 && (location - lastLeftClickPos).Magnitude < 20)
+                {
+                    CharmDoubleClicked?.Invoke(hoveredCharm ?? 0);
+                }
+                lastLeftClickTime = now;
+                lastLeftClickPos = location;
 
-            rope.BeginDrag(location);
+                rope.BeginDrag(location);
+            }
+        }
+        else if (isButtonDown && isDraggingAnchor)
+        {
+            DisplayInfo display = DisplayObserver.DisplayAt(settings.DisplayIndex);
+            Rect bounds = display.WorkArea;
+
+            double targetMidX = cursor.X - anchorDragGrabOffset;
+            double clampedMidX = Math.Clamp(targetMidX, bounds.Left, bounds.Right);
+
+            Size canvas = OverlayMetrics.CanvasSize(settings.CharmSize, settings.RopeLength);
+            var pixels = new Size(canvas.Width * scale, canvas.Height * scale);
+            double newOffsetX = ScreenPlacement.OffsetXForMidX(
+                clampedMidX,
+                settings.Anchor,
+                pixels,
+                bounds,
+                OverlayMetrics.EdgeInset * scale,
+                scale);
+
+            frame = new Rect(clampedMidX - (frame.Width / 2), frame.Top, frame.Width, frame.Height);
+
+            NativeMethods.SetWindowPos(
+                surface.Handle,
+                IntPtr.Zero,
+                (int)Math.Round(frame.Left),
+                (int)Math.Round(frame.Top),
+                0, 0,
+                NativeMethods.SwpNosize | NativeMethods.SwpNozorder | NativeMethods.SwpNoactivate);
+
+            // Apply gentle inertial sway while moving across the desktop
+            double vx = clock.LastDelta > 0 ? (cursor.X - lastDesktopCursorX) / clock.LastDelta : 0;
+            if (Math.Abs(vx) > 8)
+            {
+                rope.Sway((vx / scale) * 0.25);
+            }
+
+            lastDesktopCursorX = cursor.X;
+            settings = settings with { OffsetX = newOffsetX };
+        }
+        else if (!isButtonDown && isDraggingAnchor)
+        {
+            isDraggingAnchor = false;
+            AnchorMoved?.Invoke(settings.OffsetX);
         }
         else if (isButtonDown && rope.IsDragging)
         {

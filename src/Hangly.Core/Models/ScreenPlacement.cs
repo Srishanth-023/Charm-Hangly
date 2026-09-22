@@ -60,13 +60,49 @@ public static class ScreenPlacement
         return ClampAnchorPoint(proposed, bounds);
     }
 
-    private static double AnchoredOriginX(OverlayAnchor anchor, Size size, Rect bounds, double edgeInset) =>
+    public static double AnchoredOriginX(OverlayAnchor anchor, Size size, Rect bounds, double edgeInset) =>
         anchor switch
         {
             OverlayAnchor.TopLeading => bounds.Left + edgeInset,
             OverlayAnchor.TopTrailing => bounds.Right - size.Width - edgeInset,
             _ => bounds.Left + ((bounds.Width - size.Width) / 2),
         };
+
+    /// <summary>Calculates the horizontal offset required to place the anchor midpoint at targetMidX.</summary>
+    public static double OffsetXForMidX(
+        double targetMidX,
+        OverlayAnchor anchor,
+        Size size,
+        Rect bounds,
+        double edgeInset,
+        double scale)
+    {
+        if (scale <= 0)
+        {
+            scale = 1;
+        }
+
+        double originX = AnchoredOriginX(anchor, size, bounds, edgeInset);
+        return (targetMidX - originX - (size.Width / 2)) / scale;
+    }
+
+    /// <summary>Calculates the virtual desktop horizontal midpoint for a given offset.</summary>
+    public static double MidXForOffsetX(
+        double offsetX,
+        OverlayAnchor anchor,
+        Size size,
+        Rect bounds,
+        double edgeInset,
+        double scale)
+    {
+        if (scale <= 0)
+        {
+            scale = 1;
+        }
+
+        double originX = AnchoredOriginX(anchor, size, bounds, edgeInset);
+        return originX + (offsetX * scale) + (size.Width / 2);
+    }
 
     /// <summary>Keeps the point the charm hangs from on screen, rather than the whole window.</summary>
     /// <remarks>

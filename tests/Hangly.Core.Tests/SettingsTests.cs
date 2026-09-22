@@ -251,4 +251,36 @@ public class SettingsStoreTests : IDisposable
 
         Assert.Equal(["hamsa", "daruma"], new SettingsStore(Path_).Settings.Overlay.CharmIds);
     }
+
+    [Fact(DisplayName = "Charm glow defaults to 1.0, clamps, and distinguishes inequality")]
+    public void CharmGlowBehavior()
+    {
+        var settings = new OverlaySettings();
+        Assert.Equal(1.0, settings.CharmGlow);
+
+        OverlaySettings clamped = new OverlaySettings { CharmGlow = -0.5 }.Clamped();
+        Assert.Equal(0.0, clamped.CharmGlow);
+
+        OverlaySettings clampedMax = new OverlaySettings { CharmGlow = 99.0 }.Clamped();
+        Assert.Equal(2.5, clampedMax.CharmGlow);
+
+        var first = new OverlaySettings { CharmGlow = 0.8 };
+        var second = new OverlaySettings { CharmGlow = 0.8 };
+        var third = new OverlaySettings { CharmGlow = 1.2 };
+        Assert.Equal(first, second);
+        Assert.NotEqual(first, third);
+    }
+
+    [Fact(DisplayName = "Charm glow round-trips through JSON")]
+    public void CharmGlowRoundTrips()
+    {
+        var original = new AppSettings
+        {
+            Overlay = new OverlaySettings { CharmGlow = 1.45 },
+        };
+
+        AppSettings decoded = AppSettings.FromJson(original.ToJson(), out bool recovered);
+        Assert.False(recovered);
+        Assert.Equal(1.45, decoded.Overlay.CharmGlow);
+    }
 }

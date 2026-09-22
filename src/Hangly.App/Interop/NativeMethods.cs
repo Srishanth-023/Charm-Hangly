@@ -43,6 +43,7 @@ internal static partial class NativeMethods
 
     internal const uint SwpNosize = 0x0001;
     internal const uint SwpNomove = 0x0002;
+    internal const uint SwpNozorder = 0x0004;
     internal const uint SwpNoactivate = 0x0010;
     internal const uint SwpShowwindow = 0x0040;
 

@@ -249,6 +249,23 @@ public sealed partial class RopeSimulation
         Wake();
     }
 
+    /// <summary>Imparts a horizontal sway to the hanging charms as the anchor moves.</summary>
+    public void Sway(double horizontalSpeed)
+    {
+        if (Points.Length < 2 || Math.Abs(horizontalSpeed) < 0.001)
+        {
+            return;
+        }
+
+        for (int i = 1; i < Points.Length; i++)
+        {
+            double weight = i / (double)Points.Length;
+            Points[i].PreviousPosition += new Vec2(horizontalSpeed * Configuration.FixedTimeStep * weight, 0);
+        }
+
+        Wake();
+    }
+
     public void Wake()
     {
         IsSleeping = false;
