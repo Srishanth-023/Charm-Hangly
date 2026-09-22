@@ -7,6 +7,13 @@
     xmlns:local="using:Hangly.App.Customize">
 
     <Grid x:Name="Root">
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#09FFD700" Offset="0.0" />
+                <GradientStop Color="#00000000" Offset="0.4" />
+                <GradientStop Color="#088A2BE2" Offset="1.0" />
+            </LinearGradientBrush>
+        </Grid.Background>
         <Grid.Resources>
             <!--
                 One tile. The tick is a border rather than a checkbox: a charm is chosen
@@ -15,18 +22,20 @@
             -->
             <DataTemplate x:Key="CharmTemplate" x:DataType="local:CharmTile">
                 <Grid
-                    Width="84"
-                    Height="102"
+                    Width="92"
+                    Height="112"
                     Padding="3"
                     AutomationProperties.Name="{x:Bind DisplayName, Mode=OneTime}"
                     ToolTipService.ToolTip="{x:Bind DisplayName, Mode=OneTime}">
                     <Border
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{x:Bind Outline, Mode=OneWay}"
                         BorderThickness="2"
-                        CornerRadius="8" />
+                        CornerRadius="14" />
                     <Button
                         Width="26"
                         Height="26"
+                        Margin="0,3,3,0"
                         Padding="0"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Top"
@@ -36,19 +45,21 @@
                         Click="OnFavouriteClicked"
                         Content="{x:Bind FavouriteGlyph, Mode=OneWay}"
                         FontFamily="Segoe Fluent Icons"
-                        FontSize="14"
+                        FontSize="13"
                         Tag="{x:Bind Id, Mode=OneTime}"
                         ToolTipService.ToolTip="{x:Bind FavouriteLabel, Mode=OneWay}" />
-                    <StackPanel VerticalAlignment="Center">
+                    <StackPanel VerticalAlignment="Center" Padding="4,2">
                         <Image
-                            Width="48"
-                            Height="48"
+                            Width="52"
+                            Height="52"
                             Stretch="Uniform"
                             Source="{x:Bind Image, Mode=OneTime}" />
                         <TextBlock
-                            Margin="0,4,0,0"
+                            Margin="0,5,0,0"
                             HorizontalAlignment="Center"
                             MaxLines="2"
+                            FontSize="11"
+                            FontWeight="Medium"
                             Style="{StaticResource CaptionTextBlockStyle}"
                             Text="{x:Bind DisplayName, Mode=OneTime}"
                             TextAlignment="Center"
@@ -120,11 +131,15 @@
             <DataTemplate x:Key="TagTemplate" x:DataType="x:String">
                 <Border
                     Margin="0,0,6,6"
-                    Padding="8,3"
+                    Padding="10,4"
                     Background="{ThemeResource ControlFillColorSecondaryBrush}"
-                    CornerRadius="10">
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12">
                     <TextBlock
                         Opacity="0.9"
+                        FontSize="11"
+                        FontWeight="Medium"
                         Style="{StaticResource CaptionTextBlockStyle}"
                         Text="{x:Bind}" />
                 </Border>
@@ -392,23 +407,31 @@
                                 </muxc:ListView.ItemsPanel>
                                 <muxc:ListView.ItemTemplate>
                                     <DataTemplate x:DataType="local:SlotTile">
-                                        <StackPanel
-                                            Orientation="Horizontal"
-                                            Padding="2"
-                                            Spacing="10">
-                                            <Image
-                                                Width="40"
-                                                Height="40"
-                                                VerticalAlignment="Center"
-                                                Source="{x:Bind Image, Mode=OneWay}"
-                                                Stretch="Uniform" />
-                                            <TextBlock
-                                                VerticalAlignment="Center"
-                                                MaxLines="1"
-                                                Style="{StaticResource BodyTextBlockStyle}"
-                                                Text="{x:Bind Name, Mode=OneWay}"
-                                                TextTrimming="CharacterEllipsis" />
-                                        </StackPanel>
+                                        <Border
+                                            Margin="0,2,0,5"
+                                            Padding="10,8"
+                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="12">
+                                            <StackPanel
+                                                Orientation="Horizontal"
+                                                Spacing="12">
+                                                <Image
+                                                    Width="38"
+                                                    Height="38"
+                                                    VerticalAlignment="Center"
+                                                    Source="{x:Bind Image, Mode=OneWay}"
+                                                    Stretch="Uniform" />
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    MaxLines="1"
+                                                    FontWeight="SemiBold"
+                                                    Style="{StaticResource BodyTextBlockStyle}"
+                                                    Text="{x:Bind Name, Mode=OneWay}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Border>
                                     </DataTemplate>
                                 </muxc:ListView.ItemTemplate>
                             </muxc:ListView>
@@ -481,7 +504,7 @@
                         is under it, so anything in that corner of this window is behind a
                         charm some of the time.
                     -->
-                    <Grid Margin="0,0,0,12" ColumnSpacing="16">
+                    <Grid Margin="0,0,0,14" ColumnSpacing="16">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
@@ -489,24 +512,33 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock
                             VerticalAlignment="Center"
+                            FontWeight="SemiBold"
                             Style="{StaticResource TitleTextBlockStyle}"
                             Text="Library" />
-                        <muxc:ListView
-                            x:Name="BrowseMode"
+                        <Border
                             Grid.Column="1"
                             VerticalAlignment="Center"
-                            AutomationProperties.AutomationId="BrowseMode"
-                            AutomationProperties.Name="Browse charms or ropes"
-                            SelectionChanged="OnBrowseModeChanged"
-                            SelectionMode="Single">
-                            <muxc:ListView.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <muxc:ItemsStackPanel Orientation="Horizontal" />
-                                </ItemsPanelTemplate>
-                            </muxc:ListView.ItemsPanel>
-                            <x:String>Charms</x:String>
-                            <x:String>Ropes</x:String>
-                        </muxc:ListView>
+                            Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="18"
+                            Padding="2">
+                            <muxc:ListView
+                                x:Name="BrowseMode"
+                                VerticalAlignment="Center"
+                                AutomationProperties.AutomationId="BrowseMode"
+                                AutomationProperties.Name="Browse charms or ropes"
+                                SelectionChanged="OnBrowseModeChanged"
+                                SelectionMode="Single">
+                                <muxc:ListView.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <muxc:ItemsStackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </muxc:ListView.ItemsPanel>
+                                <muxc:ListViewItem Content="✨ Charms" CornerRadius="14" Height="30" Padding="12,0" FontWeight="SemiBold" />
+                                <muxc:ListViewItem Content="🪢 Ropes" CornerRadius="14" Height="30" Padding="12,0" FontWeight="SemiBold" />
+                            </muxc:ListView>
+                        </Border>
                     </Grid>
 
                     <!-- Search and the chips. A category is a filter, and a filter is one
@@ -602,17 +634,40 @@
                                 SelectionMode="Single">
                                 <muxc:ListView.ItemTemplate>
                                     <DataTemplate x:DataType="local:RopeChoiceItem">
-                                        <StackPanel Margin="0,6,0,6" Spacing="2">
-                                            <TextBlock
-                                                Style="{StaticResource BodyStrongTextBlockStyle}"
-                                                Text="{x:Bind Name, Mode=OneTime}" />
-                                            <TextBlock
-                                                MaxWidth="520"
-                                                Opacity="0.7"
-                                                Style="{StaticResource CaptionTextBlockStyle}"
-                                                Text="{x:Bind Description, Mode=OneTime}"
-                                                TextWrapping="Wrap" />
-                                        </StackPanel>
+                                        <Border
+                                            Margin="0,4,12,6"
+                                            Padding="16,12"
+                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="12">
+                                            <Grid ColumnSpacing="14">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Border
+                                                    Width="38"
+                                                    Height="38"
+                                                    Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                                    CornerRadius="19"
+                                                    VerticalAlignment="Center">
+                                                    <FontIcon Glyph="&#xE71B;" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                                    <TextBlock
+                                                        FontWeight="SemiBold"
+                                                        Style="{StaticResource BodyStrongTextBlockStyle}"
+                                                        Text="{x:Bind Name, Mode=OneTime}" />
+                                                    <TextBlock
+                                                        MaxWidth="600"
+                                                        Opacity="0.75"
+                                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                                        Text="{x:Bind Description, Mode=OneTime}"
+                                                        TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
                                     </DataTemplate>
                                 </muxc:ListView.ItemTemplate>
                             </muxc:ListView>

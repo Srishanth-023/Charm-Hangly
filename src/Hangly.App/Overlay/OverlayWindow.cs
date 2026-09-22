@@ -79,6 +79,9 @@ public sealed class OverlayWindow : IDisposable
     private OverlaySettings settings;
     private bool isClickThrough = true;
     private bool wasButtonDown;
+    private bool wasRButtonDown;
+    private long lastLeftClickTime;
+    private Vec2 lastLeftClickPos;
     private Vec2 lastCursor;
     private Rect frame;
     private double scale = 1;
@@ -116,6 +119,12 @@ public sealed class OverlayWindow : IDisposable
 
     /// <summary>A file was dragged over a charm for the first time in this drag.</summary>
     public event Action? DragEntered;
+
+    /// <summary>The charm was right-clicked: which place.</summary>
+    public event Action<int>? CharmRightClicked;
+
+    /// <summary>The charm was double-clicked: which place.</summary>
+    public event Action<int>? CharmDoubleClicked;
 
     /// <summary>Changes what hangs on the cord, without rebuilding the window.</summary>
     /// <remarks>
@@ -481,19 +490,40 @@ public sealed class OverlayWindow : IDisposable
             (cursor.Y - frame.Top) / scale);
 
         bool isButtonDown = (NativeMethods.GetAsyncKeyState(NativeMethods.VkLbutton) & 0x8000) != 0;
+        bool isRButtonDown = (NativeMethods.GetAsyncKeyState(NativeMethods.VkRbutton) & 0x8000) != 0;
 
         // Which place, not just whether: a drop has to land on the charm it was aimed at.
         // This is polled anyway for click-through, so the drop target costs no extra work.
         hoveredCharm = rope.CharmIndexAt(location);
         bool overCharm = hoveredCharm is not null;
 
-        // The cursor may only pass through when it is not over the charm — and never
+        // Also check if the cursor is near the cord so interactions feel natural.
+        bool overCord = Math.Abs(location.X - rope.Anchor.X) < 22.0 &&
+                        location.Y >= 0 &&
+                        location.Y <= rope.Configuration.TotalLength + 30.0;
+        bool isInteractive = overCharm || overCord;
+
+        // The cursor may only pass through when it is not over the charm or rope — and never
         // mid-drag, or letting go while moving fast would drop the charm the instant the
         // pointer outran it.
-        SetClickThrough(!overCharm && !rope.IsDragging);
+        SetClickThrough(!isInteractive && !rope.IsDragging);
 
-        if (isButtonDown && !wasButtonDown && overCharm)
+        // Right-click on charm or rope opens the interface (Settings/Customize).
+        if (isRButtonDown && !wasRButtonDown && isInteractive)
         {
+            CharmRightClicked?.Invoke(hoveredCharm ?? 0);
+        }
+
+        if (isButtonDown && !wasButtonDown && isInteractive)
+        {
+            long now = Environment.TickCount64;
+            if (now - lastLeftClickTime < 350 && (location - lastLeftClickPos).Magnitude < 20)
+            {
+                CharmDoubleClicked?.Invoke(hoveredCharm ?? 0);
+            }
+            lastLeftClickTime = now;
+            lastLeftClickPos = location;
+
             rope.BeginDrag(location);
         }
         else if (isButtonDown && rope.IsDragging)
@@ -512,6 +542,7 @@ public sealed class OverlayWindow : IDisposable
         }
 
         wasButtonDown = isButtonDown;
+        wasRButtonDown = isRButtonDown;
         lastCursor = location;
     }
 

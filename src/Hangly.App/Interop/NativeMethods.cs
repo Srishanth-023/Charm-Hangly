@@ -115,6 +115,7 @@ internal static partial class NativeMethods
     internal static partial short GetAsyncKeyState(int vKey);
 
     internal const int VkLbutton = 0x01;
+    internal const int VkRbutton = 0x02;
 
     [LibraryImport("user32.dll", SetLastError = true)]
     internal static partial uint GetDpiForWindow(IntPtr hWnd);

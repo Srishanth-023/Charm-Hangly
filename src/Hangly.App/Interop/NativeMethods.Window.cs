@@ -174,6 +174,10 @@ internal static partial class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool ShowWindow(IntPtr hWnd, int command);
 
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SetForegroundWindow(IntPtr hWnd);
+
     [DllImport("user32.dll", EntryPoint = "PostMessageW", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool PostMessage(IntPtr hWnd, uint message, IntPtr wParam, IntPtr lParam);

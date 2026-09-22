@@ -43,6 +43,7 @@ public sealed class AppEnvironment : IDisposable
 
     private TrayIcon? tray;
     private OverlayWindow? overlay;
+    private readonly Microsoft.UI.Dispatching.DispatcherQueue? dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
 
     /// <summary>The overlay, once it exists. Null before bootstrap and after quit.</summary>
     public OverlayWindow? Overlay => overlay;
@@ -528,6 +529,8 @@ public sealed class AppEnvironment : IDisposable
 
         overlay.DragEntered += () => analytics.Track(Events.AirdropDragEntered);
         overlay.FileDropped += OnFileDroppedOnCharm;
+        overlay.CharmRightClicked += (slot) => OpenCustomize();
+        overlay.CharmDoubleClicked += (slot) => OpenCustomize();
         Diagnostics.Log("overlay window constructed");
 
         // Returns as soon as the frame loop is running. The window itself is created on
@@ -565,27 +568,50 @@ public sealed class AppEnvironment : IDisposable
     /// Opens the Customize window, or brings the open one forward.
     /// </summary>
     /// <remarks>
-    /// Called from the tray menu, which runs on the thread that owns the XAML
-    /// application — the same thread a <c>Window</c> has to be created on.
+    /// Can be called from any thread (tray menu, or overlay frame loop upon right-click).
+    /// Thread dispatch is performed automatically via <see cref="dispatcherQueue"/>.
     /// </remarks>
-    private void OpenCustomize()
-    {
-        try
-        {
-            // Built once and kept. It hides on close rather than closing, so there is
-            // nothing to rebuild and the window comes back where it was left.
-            if (customize is null)
-            {
-                customize = new Customize.CustomizeWindow(store, launchAtLogin, analytics, this);
-                Diagnostics.Log("customize window created");
-            }
+    public void OpenCustomize() => OpenCustomize(null);
 
-            customize.AppWindow.Show();
-            customize.Activate();
-        }
-        catch (Exception exception)
+    public void OpenCustomize(string? page)
+    {
+        void Action()
         {
-            Diagnostics.Failure("customize window", exception);
+            try
+            {
+                // Built once and kept. It hides on close rather than closing, so there is
+                // nothing to rebuild and the window comes back where it was left.
+                if (customize is null)
+                {
+                    customize = new Customize.CustomizeWindow(store, launchAtLogin, analytics, this);
+                    Diagnostics.Log("customize window created");
+                }
+
+                if (page is not null)
+                {
+                    customize.SelectPage(page);
+                }
+
+                customize.AppWindow.Show();
+                customize.Activate();
+
+                IntPtr hwnd = WinRT.Interop.WindowNative.GetWindowHandle(customize);
+                Interop.NativeMethods.ShowWindow(hwnd, 5); // SW_SHOW
+                Interop.NativeMethods.SetForegroundWindow(hwnd);
+            }
+            catch (Exception exception)
+            {
+                Diagnostics.Failure("customize window", exception);
+            }
+        }
+
+        if (dispatcherQueue != null && !dispatcherQueue.HasThreadAccess)
+        {
+            dispatcherQueue.TryEnqueue(Action);
+        }
+        else
+        {
+            Action();
         }
     }
 

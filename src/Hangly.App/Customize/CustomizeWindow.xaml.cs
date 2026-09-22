@@ -93,6 +93,7 @@ public sealed partial class CustomizeWindow : Window
         isLoading = true;
 
         InitializeComponent();
+        TrySetBackdrop();
         Title = "Hangly";
         AppWindow.Closing += OnClosing;
 
@@ -865,16 +866,57 @@ public sealed partial class CustomizeWindow : Window
     /// </remarks>
     public void ShowUpdates(Services.UpdateCheck found)
     {
+        SelectPage("about");
+        ShowUpdateResult(found);
+    }
+
+    /// <summary>Navigates directly to a section in the navigation view.</summary>
+    public void SelectPage(string page)
+    {
         foreach (object item in Nav.MenuItems)
         {
-            if (item is NavigationViewItem entry && (entry.Tag as string) == "about")
+            if (item is NavigationViewItem entry && (entry.Tag as string) == page)
             {
                 Nav.SelectedItem = entry;
                 break;
             }
         }
+    }
 
-        ShowUpdateResult(found);
+    /// <summary>Switches directly to the Ropes picker in the library.</summary>
+    public void ShowRopes()
+    {
+        SelectPage("charms");
+        BrowseMode.SelectedIndex = 1;
+    }
+
+    /// <summary>Switches directly to the Charms picker in the library.</summary>
+    public void ShowCharms()
+    {
+        SelectPage("charms");
+        BrowseMode.SelectedIndex = 0;
+    }
+
+    private void TrySetBackdrop()
+    {
+        try
+        {
+            if (Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported())
+            {
+                SystemBackdrop = new Microsoft.UI.Xaml.Media.MicaBackdrop
+                {
+                    Kind = Microsoft.UI.Composition.SystemBackdrops.MicaKind.BaseAlt
+                };
+            }
+            else if (Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported())
+            {
+                SystemBackdrop = new Microsoft.UI.Xaml.Media.DesktopAcrylicBackdrop();
+            }
+        }
+        catch
+        {
+            // Graceful fallback to default system background
+        }
     }
 
     private async void OnInstallUpdate(object sender, RoutedEventArgs args)
