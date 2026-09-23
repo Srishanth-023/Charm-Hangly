@@ -6,7 +6,7 @@ real hanging object.
 [![Build](https://github.com/SharanCreatedThis/Hangly-Windows/actions/workflows/build.yml/badge.svg)](https://github.com/SharanCreatedThis/Hangly-Windows/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-<img src="hangly-desktop.png" alt="A charm hanging from a rope over a Windows desktop" width="820">
+<img src="assets/hangly-desktop.png" alt="A charm hanging from a rope over a Windows desktop" width="820">
 
 Hangly for Windows is a C# application built with WinUI 3, .NET 9 and Win2D. It runs on
 Windows 10 and 11, with native x64 and ARM64 builds.
@@ -20,7 +20,7 @@ Windows 10 and 11, with native x64 and ARM64 builds.
 - Import your own PNG, JPG or SVG charm, or create one in the app.
 - Transparent, click-through desktop overlay with low idle CPU usage.
 
-<img src="hangly-library.png" alt="The Hangly Library showing charm collections and a selected charm" width="820">
+<img src="assets/hangly-library.png" alt="The Hangly Library showing charm collections and a selected charm" width="820">
 
 ## v1.0.0 release
 
