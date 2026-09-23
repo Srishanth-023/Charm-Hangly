@@ -81,8 +81,6 @@ public sealed class OverlayWindow : IDisposable
     private bool wasButtonDown;
     private bool wasRButtonDown;
     private bool wasMButtonDown;
-    private int rapidClickCount;
-    private long lastRapidClickTime;
     private int rightClickCount;
     private long lastRightClickTime;
     private long lastLeftClickTime;
@@ -129,9 +127,6 @@ public sealed class OverlayWindow : IDisposable
 
     /// <summary>A file was dragged over a charm for the first time in this drag.</summary>
     public event Action? DragEntered;
-
-    /// <summary>The charm or rope was clicked rapidly 4-5 times in succession (close application): which place.</summary>
-    public event Action<int>? CharmRapidClicked;
 
     /// <summary>The charm was right-clicked twice in rapid succession (open menu): which place.</summary>
     public event Action<int>? CharmRightDoubleClicked;
@@ -576,27 +571,6 @@ public sealed class OverlayWindow : IDisposable
         SetClickThrough(!isInteractive && !rope.IsDragging && !isDraggingAnchor);
 
         long now = Environment.TickCount64;
-
-        // Rapid multi-click detection: clicking the charm or rope repeatedly (4-5 times) closes the application.
-        bool anyClickDown = (isButtonDown && !wasButtonDown) || (isRButtonDown && !wasRButtonDown);
-        if (anyClickDown && isInteractive)
-        {
-            if (now - lastRapidClickTime < 600)
-            {
-                rapidClickCount++;
-            }
-            else
-            {
-                rapidClickCount = 1;
-            }
-            lastRapidClickTime = now;
-
-            if (rapidClickCount >= 5)
-            {
-                rapidClickCount = 0;
-                CharmRapidClicked?.Invoke(hoveredCharm ?? 0);
-            }
-        }
 
         // Right-click handling: open menu on two right clicks (double right-click)
         if (isRButtonDown && !wasRButtonDown && isInteractive)

@@ -332,8 +332,11 @@ public sealed partial class CustomizeWindow : Window
         analytics.Track(Events.CollectionOpened(card.Name));
     }
 
+    private double lastFilterChipsWidth = -1;
+
     private void BuildFilterChips()
     {
+        chips.Clear();
         AddChip("All", CharmFilter.All);
         AddChip("Favourites", CharmFilter.Favourites);
         AddChip("Recent", CharmFilter.Recent);
@@ -343,6 +346,7 @@ public sealed partial class CustomizeWindow : Window
         }
 
         HighlightChips();
+        LayoutFilterChips();
     }
 
     private void AddChip(string label, CharmFilter which)
@@ -357,7 +361,59 @@ public sealed partial class CustomizeWindow : Window
         };
 
         chips.Add(chip);
-        FilterChips.Children.Add(chip);
+    }
+
+    private void OnFilterChipsSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (Math.Abs(e.NewSize.Width - lastFilterChipsWidth) > 8)
+        {
+            lastFilterChipsWidth = e.NewSize.Width;
+            LayoutFilterChips();
+        }
+    }
+
+    private void LayoutFilterChips()
+    {
+        if (FilterChips == null || chips.Count == 0)
+        {
+            return;
+        }
+
+        double availableWidth = FilterChips.ActualWidth;
+        if (availableWidth <= 50)
+        {
+            availableWidth = 700;
+        }
+
+        FilterChips.Children.Clear();
+        var currentRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        double currentX = 0;
+
+        foreach (var chip in chips)
+        {
+            if (chip.Parent is Panel parent)
+            {
+                parent.Children.Remove(chip);
+            }
+
+            chip.Measure(new Windows.Foundation.Size(double.PositiveInfinity, 36));
+            double chipWidth = chip.DesiredSize.Width > 0 ? chip.DesiredSize.Width : 80;
+
+            if (currentX + chipWidth > availableWidth && currentRow.Children.Count > 0)
+            {
+                FilterChips.Children.Add(currentRow);
+                currentRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+                currentX = 0;
+            }
+
+            currentRow.Children.Add(chip);
+            currentX += chipWidth + 8;
+        }
+
+        if (currentRow.Children.Count > 0)
+        {
+            FilterChips.Children.Add(currentRow);
+        }
     }
 
     private void HighlightChips()
@@ -366,6 +422,11 @@ public sealed partial class CustomizeWindow : Window
         {
             chip.IsChecked = Equals(chip.Tag, filter);
         }
+    }
+
+    private void OnQuitClicked(object sender, RoutedEventArgs args)
+    {
+        environment.Quit();
     }
 
     /// <summary>

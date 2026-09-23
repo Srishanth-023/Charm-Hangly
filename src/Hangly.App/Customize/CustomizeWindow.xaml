@@ -4,8 +4,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-    xmlns:local="using:Hangly.App.Customize"
-    xmlns:controls="using:Hangly.App.Controls">
+    xmlns:local="using:Hangly.App.Customize">
 
     <Grid x:Name="Root">
         <Grid.Background>
@@ -190,7 +189,8 @@
                 than something the Library owns.
             -->
             <muxc:NavigationView.PaneFooter>
-                <Border
+                <StackPanel>
+                    <Border
                     x:Name="DetailPanel"
                     Padding="16,12,16,16"
                     BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
@@ -321,7 +321,23 @@
                             </ScrollViewer>
                     </Grid>
                 </Border>
-            </muxc:NavigationView.PaneFooter>
+                <Border
+                    Padding="16,8,16,12"
+                    BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                    BorderThickness="0,1,0,0">
+                    <Button
+                        x:Name="QuitAppButton"
+                        Click="OnQuitClicked"
+                        HorizontalAlignment="Stretch"
+                        ToolTipService.ToolTip="Completely close and exit Hangly">
+                        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                            <FontIcon FontSize="13" Glyph="&#xE711;" Foreground="#E05555" />
+                            <TextBlock Text="Close Hangly" FontWeight="SemiBold" Foreground="#E05555" />
+                        </StackPanel>
+                    </Button>
+                </Border>
+            </StackPanel>
+        </muxc:NavigationView.PaneFooter>
 
             <Grid>
                 <!-- Library -->
@@ -595,7 +611,7 @@
                                 TextWrapping="Wrap" />
                         </StackPanel>
 
-                        <controls:WrapPanel x:Name="FilterChips" HorizontalSpacing="8" VerticalSpacing="8" />
+                        <StackPanel x:Name="FilterChips" Spacing="8" Margin="0,0,0,16" SizeChanged="OnFilterChipsSizeChanged" />
                     </StackPanel>
 
                     <Grid Grid.Row="2">
@@ -1198,7 +1214,7 @@
                                                     Foreground="White"
                                                     FontSize="11"
                                                     FontWeight="SemiBold"
-                                                    Text="v0.9.0" />
+                                                    Text="v1.0.0" />
                                             </Border>
                                         </StackPanel>
                                         <TextBlock
@@ -1433,6 +1449,27 @@
                                             TextWrapping="Wrap" />
                                     </ScrollViewer>
                                 </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Exit Application Card -->
+                        <Border
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="18">
+                            <StackPanel Spacing="12">
+                                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Exit Application" FontSize="15" />
+                                <TextBlock Opacity="0.8" Style="{StaticResource BodyTextBlockStyle}" Text="Fully terminate the Hangly background process and close all charms." TextWrapping="Wrap" />
+                                <Button
+                                    Click="OnQuitClicked"
+                                    HorizontalAlignment="Left">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon FontSize="14" Glyph="&#xE711;" Foreground="#E05555" />
+                                        <TextBlock Text="Close Hangly" FontWeight="SemiBold" Foreground="#E05555" />
+                                    </StackPanel>
+                                </Button>
                             </StackPanel>
                         </Border>
 

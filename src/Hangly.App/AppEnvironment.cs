@@ -530,19 +530,6 @@ public sealed class AppEnvironment : IDisposable
         overlay.DragEntered += () => analytics.Track(Events.AirdropDragEntered);
         overlay.FileDropped += OnFileDroppedOnCharm;
 
-        // Close application when keep on clicking the charm or rope (4-5 times)
-        overlay.CharmRapidClicked += (slot) =>
-        {
-            if (dispatcherQueue != null && !dispatcherQueue.HasThreadAccess)
-            {
-                dispatcherQueue.TryEnqueue(Quit);
-            }
-            else
-            {
-                Quit();
-            }
-        };
-
         // Open menu on two right clicks (double right-click)
         overlay.CharmRightDoubleClicked += (slot) => ShowContextMenu();
 
@@ -828,6 +815,7 @@ public sealed class AppEnvironment : IDisposable
         // Said before the window goes, so the goodbye is sent while there is still a
         // process to send it from.
         analytics.Stop();
+        HideOverlay();
         customize?.AllowClose();
         customize = null;
         Onboarding.ProcessLifetime.Release();

@@ -307,7 +307,7 @@ def publish_target(dotnet_exe: Path, arch: str, config: str) -> bool:
             str(vpk_tool),
             "pack",
             "-u", "Hangly",
-            "-v", "0.9.0",
+            "-v", "1.0.0",
             "--packTitle", "Hangly",
             "--packAuthors", "sharancreatedthis",
             "-p", str(portable_dir),

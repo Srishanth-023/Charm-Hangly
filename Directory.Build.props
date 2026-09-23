@@ -5,10 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <Authors>SharanCreatedThis</Authors>
+    <Authors>Srishanth-023</Authors>
     <Product>Hangly</Product>
     <!-- The floor for everything in the solution. The app overrides it, and the release
          build overrides that with the tag. -->
-    <Version>0.9.0</Version>
+    <Version>1.0.0</Version>
   </PropertyGroup>
 </Project>
