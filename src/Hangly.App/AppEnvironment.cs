@@ -529,8 +529,38 @@ public sealed class AppEnvironment : IDisposable
 
         overlay.DragEntered += () => analytics.Track(Events.AirdropDragEntered);
         overlay.FileDropped += OnFileDroppedOnCharm;
-        overlay.CharmRightClicked += (slot) => OpenCustomize();
+
+        // Close application when keep on clicking the charm or rope (4-5 times)
+        overlay.CharmRapidClicked += (slot) =>
+        {
+            if (dispatcherQueue != null && !dispatcherQueue.HasThreadAccess)
+            {
+                dispatcherQueue.TryEnqueue(Quit);
+            }
+            else
+            {
+                Quit();
+            }
+        };
+
+        // Open menu on two right clicks (double right-click)
+        overlay.CharmRightDoubleClicked += (slot) => ShowContextMenu();
+
+        // Double left-click opens settings
         overlay.CharmDoubleClicked += (slot) => OpenCustomize();
+
+        // Middle-click (scroll wheel click) also closes directly
+        overlay.CharmMiddleClicked += (slot) =>
+        {
+            if (dispatcherQueue != null && !dispatcherQueue.HasThreadAccess)
+            {
+                dispatcherQueue.TryEnqueue(Quit);
+            }
+            else
+            {
+                Quit();
+            }
+        };
         overlay.AnchorMoved += (offsetX) =>
         {
             void Update() => store.UpdateOverlay(current => current with { OffsetX = offsetX });
@@ -755,9 +785,45 @@ public sealed class AppEnvironment : IDisposable
     }
 
     /// <summary>
+    /// Displays the context menu right at the mouse cursor position.
+    /// Used when right-clicking on the charm, rope, or top anchor.
+    /// </summary>
+    public void ShowContextMenu()
+    {
+        void Action()
+        {
+            try
+            {
+                if (tray != null)
+                {
+                    tray.ShowMenu();
+                }
+                else
+                {
+                    OpenCustomize();
+                }
+            }
+            catch (Exception ex)
+            {
+                Diagnostics.Failure("context menu", ex);
+                OpenCustomize();
+            }
+        }
+
+        if (dispatcherQueue != null && !dispatcherQueue.HasThreadAccess)
+        {
+            dispatcherQueue.TryEnqueue(Action);
+        }
+        else
+        {
+            Action();
+        }
+    }
+
+    /// <summary>
     /// Quits for real, which means letting the one window that refuses to close, close.
     /// </summary>
-    private void Quit()
+    public void Quit()
     {
         // Said before the window goes, so the goodbye is sent while there is still a
         // process to send it from.

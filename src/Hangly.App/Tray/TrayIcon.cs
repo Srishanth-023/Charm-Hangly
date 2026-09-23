@@ -304,7 +304,8 @@ public sealed class TrayIcon : IDisposable
         }
     }
 
-    private void ShowMenu()
+    /// <summary>Displays the application context menu at the current cursor position.</summary>
+    public void ShowMenu()
     {
         IReadOnlyList<MenuEntry> entries = MenuBuilder?.Invoke() ?? [];
         commands.Clear();

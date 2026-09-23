@@ -80,6 +80,11 @@ public sealed class OverlayWindow : IDisposable
     private bool isClickThrough = true;
     private bool wasButtonDown;
     private bool wasRButtonDown;
+    private bool wasMButtonDown;
+    private int rapidClickCount;
+    private long lastRapidClickTime;
+    private int rightClickCount;
+    private long lastRightClickTime;
     private long lastLeftClickTime;
     private Vec2 lastLeftClickPos;
     private Vec2 lastCursor;
@@ -125,8 +130,14 @@ public sealed class OverlayWindow : IDisposable
     /// <summary>A file was dragged over a charm for the first time in this drag.</summary>
     public event Action? DragEntered;
 
-    /// <summary>The charm was right-clicked: which place.</summary>
-    public event Action<int>? CharmRightClicked;
+    /// <summary>The charm or rope was clicked rapidly 4-5 times in succession (close application): which place.</summary>
+    public event Action<int>? CharmRapidClicked;
+
+    /// <summary>The charm was right-clicked twice in rapid succession (open menu): which place.</summary>
+    public event Action<int>? CharmRightDoubleClicked;
+
+    /// <summary>The charm was middle-clicked (scroll wheel clicked): which place.</summary>
+    public event Action<int>? CharmMiddleClicked;
 
     /// <summary>The charm was double-clicked: which place.</summary>
     public event Action<int>? CharmDoubleClicked;
@@ -534,6 +545,7 @@ public sealed class OverlayWindow : IDisposable
 
         bool isButtonDown = (NativeMethods.GetAsyncKeyState(NativeMethods.VkLbutton) & 0x8000) != 0;
         bool isRButtonDown = (NativeMethods.GetAsyncKeyState(NativeMethods.VkRbutton) & 0x8000) != 0;
+        bool isMButtonDown = (NativeMethods.GetAsyncKeyState(NativeMethods.VkMbutton) & 0x8000) != 0;
 
         // Which place, not just whether: a drop has to land on the charm it was aimed at.
         // This is polled anyway for click-through, so the drop target costs no extra work.
@@ -563,15 +575,57 @@ public sealed class OverlayWindow : IDisposable
         // pointer outran it.
         SetClickThrough(!isInteractive && !rope.IsDragging && !isDraggingAnchor);
 
-        // Right-click on charm or rope opens the interface (Settings/Customize).
+        long now = Environment.TickCount64;
+
+        // Rapid multi-click detection: clicking the charm or rope repeatedly (4-5 times) closes the application.
+        bool anyClickDown = (isButtonDown && !wasButtonDown) || (isRButtonDown && !wasRButtonDown);
+        if (anyClickDown && isInteractive)
+        {
+            if (now - lastRapidClickTime < 600)
+            {
+                rapidClickCount++;
+            }
+            else
+            {
+                rapidClickCount = 1;
+            }
+            lastRapidClickTime = now;
+
+            if (rapidClickCount >= 5)
+            {
+                rapidClickCount = 0;
+                CharmRapidClicked?.Invoke(hoveredCharm ?? 0);
+            }
+        }
+
+        // Right-click handling: open menu on two right clicks (double right-click)
         if (isRButtonDown && !wasRButtonDown && isInteractive)
         {
-            CharmRightClicked?.Invoke(hoveredCharm ?? 0);
+            if (now - lastRightClickTime < 450)
+            {
+                rightClickCount++;
+            }
+            else
+            {
+                rightClickCount = 1;
+            }
+            lastRightClickTime = now;
+
+            if (rightClickCount == 2)
+            {
+                rightClickCount = 0;
+                CharmRightDoubleClicked?.Invoke(hoveredCharm ?? 0);
+            }
+        }
+
+        // Middle-click (scroll wheel click) on charm or rope directly closes the application.
+        if (isMButtonDown && !wasMButtonDown && isInteractive)
+        {
+            CharmMiddleClicked?.Invoke(hoveredCharm ?? 0);
         }
 
         if (isButtonDown && !wasButtonDown && isInteractive)
         {
-            long now = Environment.TickCount64;
             bool isDoubleClick = (now - lastLeftClickTime < 500) && ((location - lastLeftClickPos).Magnitude < 60);
 
             if (isDoubleClick)
@@ -661,6 +715,7 @@ public sealed class OverlayWindow : IDisposable
 
         wasButtonDown = isButtonDown;
         wasRButtonDown = isRButtonDown;
+        wasMButtonDown = isMButtonDown;
         lastCursor = location;
     }
 
