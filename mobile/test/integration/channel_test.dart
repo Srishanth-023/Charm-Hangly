@@ -45,19 +45,22 @@ void main() {
       expect(log.first.method, 'checkOverlayPermission');
     });
 
-    test('startOverlayService passes charmId and ropeStyle', () async {
+    test('startOverlayService passes parameters to native', () async {
       final hanglyChannel = HanglyChannel();
       final result = await hanglyChannel.startOverlayService(
-        charmId: 'daruma',
-        ropeStyle: 'goldChain',
+        ropeColor: '#FFD700',
+        ropeLength: 140.0,
+        charmRadius: 26.0,
       );
 
       expect(result, isTrue);
       expect(log, hasLength(1));
       expect(log.first.method, 'startOverlayService');
       expect(log.first.arguments, {
-        'charmId': 'daruma',
-        'ropeStyle': 'goldChain',
+        'charmBytes': null,
+        'ropeColor': '#FFD700',
+        'ropeLength': 140.0,
+        'charmRadius': 26.0,
       });
     });
 

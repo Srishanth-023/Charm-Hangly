@@ -52,7 +52,7 @@ class _SettingsPageState extends State<SettingsPage> {
               style: TextStyle(color: HanglyTheme.textPrimary),
             ),
             content: const Text(
-              'Hangly needs the "Display over other apps" permission so your charm can continue hanging above other applications while you use your phone.\n\nYou can disable this at any time in Settings or from the notification.',
+              'Android will open "Display over other apps":\n\n1. Scroll down to "Hangly" (under letter H)\n2. Tap "Hangly" and turn ON "Allow"\n3. Return here and your charm will float over all apps!',
               style: TextStyle(color: HanglyTheme.textSecondary, height: 1.4),
             ),
             actions: [
@@ -73,14 +73,15 @@ class _SettingsPageState extends State<SettingsPage> {
         );
 
         if (proceed == true) {
+          _save(_settings.copyWith(backgroundOverlayEnabled: true));
           await _backgroundManager.requestOverlayPermission();
         }
         return;
       }
 
       await _backgroundManager.enableOverlay(
-        charmId: _settings.selectedCharmId,
-        ropeStyle: _settings.ropeStyle.name,
+        ropeLength: _settings.ropeLength * 140.0,
+        charmRadius: _settings.charmSize * 26.0,
       );
       _save(_settings.copyWith(backgroundOverlayEnabled: true));
     } else {

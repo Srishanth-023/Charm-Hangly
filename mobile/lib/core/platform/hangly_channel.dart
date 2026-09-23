@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/services.dart';
 
 class HanglyChannel {
@@ -22,15 +23,19 @@ class HanglyChannel {
   }
 
   Future<bool> startOverlayService({
-    required String charmId,
-    required String ropeStyle,
+    Uint8List? charmBytes,
+    String ropeColor = '#FFD700',
+    double ropeLength = 140.0,
+    double charmRadius = 26.0,
   }) async {
     try {
       final bool? started = await _channel.invokeMethod<bool>(
         'startOverlayService',
         {
-          'charmId': charmId,
-          'ropeStyle': ropeStyle,
+          'charmBytes': charmBytes,
+          'ropeColor': ropeColor,
+          'ropeLength': ropeLength,
+          'charmRadius': charmRadius,
         },
       );
       return started ?? false;

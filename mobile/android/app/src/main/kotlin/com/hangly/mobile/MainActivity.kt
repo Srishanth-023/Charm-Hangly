@@ -27,35 +27,61 @@ class MainActivity : FlutterActivity() {
 
                 "requestOverlayPermission" -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        val intent = Intent(
-                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                            Uri.parse("package:$packageName")
-                        )
-                        startActivity(intent)
+                        try {
+                            val intent = Intent(
+                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                Uri.parse("package:$packageName")
+                            ).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            try {
+                                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                startActivity(intent)
+                            } catch (_: Exception) {}
+                        }
                     }
                     result.success(null)
                 }
 
                 "startOverlayService" -> {
-                    val charmId = call.argument<String>("charmId") ?: "nazar"
-                    val ropeStyle = call.argument<String>("ropeStyle") ?: "thread"
+                    val charmBytes = call.argument<ByteArray>("charmBytes")
+                    val ropeColor = call.argument<String>("ropeColor") ?: "#FFD700"
+                    val ropeLength = (call.argument<Double>("ropeLength") ?: 135.0).toFloat()
+                    val charmRadius = (call.argument<Double>("charmRadius") ?: 25.0).toFloat()
 
                     val serviceIntent = Intent(this, HanglyOverlayService::class.java).apply {
-                        putExtra("charmId", charmId)
-                        putExtra("ropeStyle", ropeStyle)
+                        action = HanglyOverlayService.ACTION_SHOW_OVERLAY
+                        putExtra("charmBytes", charmBytes)
+                        putExtra("ropeColor", ropeColor)
+                        putExtra("ropeLength", ropeLength)
+                        putExtra("charmRadius", charmRadius)
                     }
 
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(serviceIntent)
-                    } else {
-                        startService(serviceIntent)
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            startForegroundService(serviceIntent)
+                        } else {
+                            startService(serviceIntent)
+                        }
+                    } catch (e: Exception) {
+                        try {
+                            startService(serviceIntent)
+                        } catch (_: Exception) {}
                     }
                     result.success(true)
                 }
 
                 "stopOverlayService" -> {
-                    val serviceIntent = Intent(this, HanglyOverlayService::class.java)
-                    stopService(serviceIntent)
+                    val serviceIntent = Intent(this, HanglyOverlayService::class.java).apply {
+                        action = HanglyOverlayService.ACTION_HIDE_OVERLAY
+                    }
+                    try {
+                        startService(serviceIntent)
+                    } catch (_: Exception) {}
                     result.success(true)
                 }
 

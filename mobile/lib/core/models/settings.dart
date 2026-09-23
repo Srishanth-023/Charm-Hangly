@@ -18,7 +18,7 @@ class HanglySettings {
     this.ropeStyle = RopeStyle.thread,
     this.hapticsEnabled = true,
     this.deviceMotionEnabled = true,
-    this.backgroundOverlayEnabled = false,
+    this.backgroundOverlayEnabled = true,
     this.physicsStrength = 1.0,
     this.favourites = const ['nazar', 'daruma', 'iron_man', 'messi'],
   });
@@ -82,7 +82,7 @@ class HanglySettings {
       hapticsEnabled: json['hapticsEnabled'] as bool? ?? true,
       deviceMotionEnabled: json['deviceMotionEnabled'] as bool? ?? true,
       backgroundOverlayEnabled:
-          json['backgroundOverlayEnabled'] as bool? ?? false,
+          json['backgroundOverlayEnabled'] as bool? ?? true,
       physicsStrength: (json['physicsStrength'] as num?)?.toDouble() ?? 1.0,
       favourites: (json['favourites'] as List<dynamic>?)
               ?.map((e) => e.toString())

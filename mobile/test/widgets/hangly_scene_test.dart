@@ -19,6 +19,6 @@ void main() {
     expect(find.byIcon(Icons.collections_bookmark_outlined), findsOneWidget);
 
     // Verify default charm name is displayed
-    expect(find.text('Nazar Boncuğu'), findsOneWidget);
+    expect(find.text('Nazar boncuğu'), findsOneWidget);
   });
 }

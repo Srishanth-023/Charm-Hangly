@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import '../../core/platform/hangly_channel.dart';
 
 class BackgroundServiceManager {
@@ -15,8 +16,10 @@ class BackgroundServiceManager {
   }
 
   Future<bool> enableOverlay({
-    required String charmId,
-    required String ropeStyle,
+    Uint8List? charmBytes,
+    String ropeColor = '#FFD700',
+    double ropeLength = 140.0,
+    double charmRadius = 26.0,
   }) async {
     final hasPerm = await hasOverlayPermission();
     if (!hasPerm) {
@@ -24,8 +27,10 @@ class BackgroundServiceManager {
       return false;
     }
     return _channel.startOverlayService(
-      charmId: charmId,
-      ropeStyle: ropeStyle,
+      charmBytes: charmBytes,
+      ropeColor: ropeColor,
+      ropeLength: ropeLength,
+      charmRadius: charmRadius,
     );
   }
 

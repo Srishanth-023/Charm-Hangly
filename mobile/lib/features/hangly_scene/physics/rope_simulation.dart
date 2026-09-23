@@ -121,7 +121,7 @@ class RopeSimulation {
     final previousAnchor = anchor;
 
     configuration = fitted;
-    anchor = RopeLayout.anchorIn(canvasWidth, canvasHeight);
+    anchor = fitted.anchor(canvasWidth, canvasHeight);
     charmLayout = CharmStackLayout.resolve(charmStackMetrics, configuration);
 
     if (needsRebuild) {

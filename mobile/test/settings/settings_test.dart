@@ -12,7 +12,7 @@ void main() {
       expect(settings.ropeStyle, RopeStyle.thread);
       expect(settings.hapticsEnabled, isTrue);
       expect(settings.deviceMotionEnabled, isTrue);
-      expect(settings.backgroundOverlayEnabled, isFalse);
+      expect(settings.backgroundOverlayEnabled, isTrue);
     });
 
     test('Clamping works on numeric values', () {

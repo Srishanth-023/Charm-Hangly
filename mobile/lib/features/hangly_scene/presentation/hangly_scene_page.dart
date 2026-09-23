@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -9,6 +10,8 @@ import '../../../core/models/charm_catalog.dart';
 import '../../../core/models/rope_style.dart';
 import '../../../core/models/settings.dart';
 import '../../../core/persistence/settings_storage.dart';
+import '../../../core/platform/hangly_channel.dart';
+import '../../../core/utils/charm_rasterizer.dart';
 import '../../../services/haptics/haptics_service.dart';
 import '../../../services/sensors/motion_sensor_service.dart';
 import '../physics/rope_simulation.dart';
@@ -30,10 +33,11 @@ class HanglyScenePage extends StatefulWidget {
 }
 
 class _HanglyScenePageState extends State<HanglyScenePage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final RopeSimulation _simulation;
   late final HapticsService _haptics;
   late final MotionSensorService _sensorService;
+  late final HanglyChannel _hanglyChannel;
   late Ticker _ticker;
 
   HanglySettings _settings = HanglySettings.defaults;
@@ -48,11 +52,19 @@ class _HanglyScenePageState extends State<HanglyScenePage>
   double _lastHeight = 0;
   bool _initialized = false;
 
+  bool _hasOverlayPermission = true;
+  bool _dismissedPermissionBanner = false;
+  bool _isOverlayActive = false;
+  Uint8List? _precomputedCharmBytes;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
     _simulation = RopeSimulation();
     _haptics = HapticsService();
+    _hanglyChannel = HanglyChannel();
 
     _sensorService = MotionSensorService(
       onSway: (speed) {
@@ -72,6 +84,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
   Future<void> _loadSettingsAndStart() async {
     final loaded = await widget.storage.loadSettings();
     final charm = CharmCatalog.byId(loaded.selectedCharmId);
+    final hasPerm = await _hanglyChannel.checkOverlayPermission();
 
     if (mounted) {
       setState(() {
@@ -79,6 +92,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
         _currentCharm = charm;
         _haptics.enabled = loaded.hapticsEnabled;
         _sensorService.updateEnabled(loaded.deviceMotionEnabled);
+        _hasOverlayPermission = hasPerm;
       });
 
       _applySettingsToSimulation();
@@ -86,7 +100,26 @@ class _HanglyScenePageState extends State<HanglyScenePage>
       _ticker.start();
       _sensorService.start();
       _initialized = true;
+
+      _precacheCurrentCharm();
+
+      if (!hasPerm && !_dismissedPermissionBanner) {
+        Future.delayed(const Duration(milliseconds: 700), () {
+          if (mounted && !_hasOverlayPermission) {
+            _requestPermissionWithHelp();
+          }
+        });
+      }
     }
+  }
+
+  Future<void> _precacheCurrentCharm() async {
+    try {
+      final bytes = await CharmRasterizer.rasterizeSvgAsset(_currentCharm.assetPath);
+      if (mounted && bytes != null) {
+        _precomputedCharmBytes = bytes;
+      }
+    } catch (_) {}
   }
 
   void _applySettingsToSimulation() {
@@ -101,6 +134,148 @@ class _HanglyScenePageState extends State<HanglyScenePage>
         charmSize: _settings.charmSize,
         ropeLength: _settings.ropeLength,
       );
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      // User minimized the app: launch native floating charm overlay across all apps
+      if (_settings.backgroundOverlayEnabled && !_isOverlayActive) {
+        _isOverlayActive = true;
+        _launchBackgroundOverlay();
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      // User reopened Hangly: stop the floating overlay to avoid clashing with the in-app view
+      _isOverlayActive = false;
+      _hanglyChannel.stopOverlayService();
+      _refreshPermissionState();
+      _wakeTicker();
+    }
+  }
+
+  Future<void> _refreshPermissionState() async {
+    final hasPerm = await _hanglyChannel.checkOverlayPermission();
+    if (mounted) {
+      final justGranted = !_hasOverlayPermission && hasPerm;
+      setState(() {
+        _hasOverlayPermission = hasPerm;
+      });
+      if (justGranted) {
+        if (!_settings.backgroundOverlayEnabled) {
+          _settings = _settings.copyWith(backgroundOverlayEnabled: true);
+          widget.storage.saveSettings(_settings);
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: HanglyTheme.surfaceElevated,
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.greenAccent),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Floating charm active! Minimize Hangly to see it on your screen.',
+                    style: TextStyle(color: HanglyTheme.textPrimary),
+                  ),
+                ),
+              ],
+            ),
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  void _launchBackgroundOverlay() {
+    final bytes = _precomputedCharmBytes;
+
+    final ropeColorHex = _settings.ropeStyle == RopeStyle.goldChain
+        ? '#FFD700'
+        : '#${_currentCharm.primaryColor.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+
+    final ropeLen = (_settings.ropeLength * 135.0).clamp(70.0, 240.0);
+    final radius = (_settings.charmSize * 25.0).clamp(16.0, 48.0);
+
+    // Call native startOverlayService immediately without blocking on async work
+    _hanglyChannel.startOverlayService(
+      charmBytes: bytes,
+      ropeColor: ropeColorHex,
+      ropeLength: ropeLen,
+      charmRadius: radius,
+    );
+
+    // If precomputation wasn't ready, resolve in background and refresh overlay
+    if (bytes == null) {
+      CharmRasterizer.rasterizeSvgAsset(_currentCharm.assetPath).then((resolved) {
+        if (resolved != null && mounted) {
+          _precomputedCharmBytes = resolved;
+          if (_isOverlayActive) {
+            _hanglyChannel.startOverlayService(
+              charmBytes: resolved,
+              ropeColor: ropeColorHex,
+              ropeLength: ropeLen,
+              charmRadius: radius,
+            );
+          }
+        }
+      });
+    }
+  }
+
+  Future<void> _requestPermissionWithHelp() async {
+    final bool? proceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: HanglyTheme.surfaceElevated,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.auto_awesome, color: HanglyTheme.primary),
+            SizedBox(width: 8),
+            Text('Enable Floating Charm', style: TextStyle(color: HanglyTheme.textPrimary, fontSize: 18)),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Android will now open the "Display over other apps" list.\n',
+              style: TextStyle(color: HanglyTheme.textSecondary, height: 1.4),
+            ),
+            Text(
+              '1. Scroll down to "Hangly" (under H)\n2. Tap "Hangly" and turn ON "Allow"\n3. Return here and your charm will float over all apps!',
+              style: TextStyle(color: HanglyTheme.textPrimary, fontWeight: FontWeight.w600, height: 1.5),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: HanglyTheme.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: HanglyTheme.primary,
+              foregroundColor: Colors.black,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+
+    if (proceed == true) {
+      if (!_settings.backgroundOverlayEnabled) {
+        _settings = _settings.copyWith(backgroundOverlayEnabled: true);
+        widget.storage.saveSettings(_settings);
+      }
+      await _hanglyChannel.requestOverlayPermission();
     }
   }
 
@@ -200,6 +375,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
       _applySettingsToSimulation();
       _simulation.reset();
       _wakeTicker();
+      _precacheCurrentCharm();
     }
   }
 
@@ -226,11 +402,14 @@ class _HanglyScenePageState extends State<HanglyScenePage>
       _applySettingsToSimulation();
       _simulation.reset();
       _wakeTicker();
+      _refreshPermissionState();
+      _precacheCurrentCharm();
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ticker.dispose();
     _sensorService.stop();
     super.dispose();
@@ -352,7 +531,93 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                 ),
               ),
 
-              // 4. Charm Title and Category (Bottom overlay pill)
+              // 4. Permission Banner (Floating Charm mode prompt)
+              if (!_hasOverlayPermission && !_dismissedPermissionBanner)
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 60,
+                  left: 16,
+                  right: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: HanglyTheme.surfaceElevated.withAlpha(240),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: HanglyTheme.primary.withAlpha(120), width: 1.5),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black38,
+                          blurRadius: 12,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: HanglyTheme.primary.withAlpha(30),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.auto_awesome,
+                            color: HanglyTheme.primary,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Float Over Other Apps',
+                                style: TextStyle(
+                                  color: HanglyTheme.textPrimary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Allow permission so your charm follows you when minimized!',
+                                style: TextStyle(
+                                  color: HanglyTheme.textSecondary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: HanglyTheme.primary,
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            minimumSize: const Size(60, 32),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: _requestPermissionWithHelp,
+                          child: const Text('Enable', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: HanglyTheme.textSecondary, size: 16),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () {
+                            setState(() {
+                              _dismissedPermissionBanner = true;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // 5. Charm Title and Category (Bottom overlay pill)
               Positioned(
                 bottom: MediaQuery.of(context).padding.bottom + 24,
                 left: 0,
