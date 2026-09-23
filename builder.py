@@ -109,8 +109,23 @@ def run_command(cmd: list[str], env: dict, cwd: Path = REPO_ROOT) -> int:
     return proc.returncode
 
 
+def kill_running_instances():
+    """Kills any running instances of Hangly to avoid DLL file locks during compilation or publishing."""
+    if platform.system() == "Windows":
+        try:
+            subprocess.run(
+                ["taskkill", "/F", "/IM", "Hangly.exe"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+        except Exception:
+            pass
+
+
 def clean_artifacts():
     """Cleans build and obj/bin directories."""
+    kill_running_instances()
     print("[builder] Cleaning artifacts...")
     dirs_to_remove = [BUILD_DIR]
     for pattern in ["**/bin", "**/obj"]:
@@ -237,6 +252,8 @@ def publish_target(dotnet_exe: Path, arch: str, config: str) -> bool:
     rid = target_info["rid"]
     platform_name = target_info["platform"]
     output_dir = BUILD_DIR / rid
+
+    kill_running_instances()
 
     # Clean existing target output
     if output_dir.is_dir():
