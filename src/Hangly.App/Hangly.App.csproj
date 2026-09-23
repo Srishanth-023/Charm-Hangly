@@ -93,6 +93,9 @@
       edited. Failing the build on it would mean the rule could never be satisfied, so the
       rule is switched off for this one project rather than suppressed case by case.
     -->
+    <!-- Omit debug symbols in Release to keep published folder clean and compact -->
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+    <DebugSymbols Condition="'$(Configuration)' == 'Release'">false</DebugSymbols>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningsAsErrors />
   </PropertyGroup>

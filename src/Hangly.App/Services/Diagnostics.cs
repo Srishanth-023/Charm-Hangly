@@ -312,12 +312,13 @@ public static class Diagnostics
         {
             lock (Gate)
             {
-                File.AppendAllText(LogPath, $"{DateTimeOffset.Now:HH:mm:ss.fff} {line}{Environment.NewLine}");
+                using var stream = new FileStream(LogPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                using var writer = new StreamWriter(stream, Encoding.UTF8);
+                writer.WriteLine($"{DateTimeOffset.Now:HH:mm:ss.fff} {line}");
             }
         }
-        catch (Exception)
+        catch
         {
-            // Deliberately swallowed. See the note on the type.
         }
     }
 }

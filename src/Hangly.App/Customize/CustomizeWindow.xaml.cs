@@ -1531,6 +1531,17 @@ public sealed partial class CustomizeWindow : Window
         ShowResults();
     }
 
+    private void OnDetailDeleteClicked(object sender, RoutedEventArgs args)
+    {
+        string? targetId = detailed?.Id ?? selectedCharmId;
+        if (targetId is null || !Hangly.Core.Models.CharmId.IsCustom(targetId))
+        {
+            return;
+        }
+
+        DeleteCustomCharm(targetId);
+    }
+
     private void OnDeleteImportClicked(object sender, RoutedEventArgs args)
     {
         if (selectedCharmId is not string id || !Hangly.Core.Models.CharmId.IsCustom(id))
@@ -1538,8 +1549,13 @@ public sealed partial class CustomizeWindow : Window
             return;
         }
 
+        DeleteCustomCharm(id);
+    }
+
+    private void DeleteCustomCharm(string charmId)
+    {
         CustomCharmEntry? entry = environment.CustomCharms.Entries
-            .FirstOrDefault(candidate => candidate.CharmId == id);
+            .FirstOrDefault(candidate => candidate.CharmId == charmId);
 
         if (entry is null)
         {
@@ -1550,6 +1566,11 @@ public sealed partial class CustomizeWindow : Window
         ImportMessage.Text = $"“{entry.Name}” was deleted.";
         selectedCharmId = null;
         DeleteButton.Visibility = Visibility.Collapsed;
+
+        if (detailed?.Id == charmId)
+        {
+            ShowDetail(null);
+        }
 
         RebuildTiles();
         RebuildChips();

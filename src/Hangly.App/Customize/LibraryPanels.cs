@@ -65,6 +65,11 @@ public sealed class CharmDetail : INotifyPropertyChanged
     public Visibility RegionVisibility =>
         string.IsNullOrWhiteSpace(Region) ? Visibility.Collapsed : Visibility.Visible;
 
+    /// <summary>Whether this charm is an imported custom charm that can be deleted.</summary>
+    public bool IsCustom { get; private set; }
+
+    public Visibility DeleteVisibility => IsCustom ? Visibility.Visible : Visibility.Collapsed;
+
     public bool IsOnRope
     {
         get => isOnRope;
@@ -115,6 +120,7 @@ public sealed class CharmDetail : INotifyPropertyChanged
         Description = entry?.Description ?? string.Empty;
         Tags = entry?.Tags ?? [];
         Image = image;
+        IsCustom = entry is not null && entry.Id.StartsWith("custom:", StringComparison.OrdinalIgnoreCase);
 
         Notify(nameof(DisplayName));
         Notify(nameof(Region));
@@ -124,6 +130,8 @@ public sealed class CharmDetail : INotifyPropertyChanged
         Notify(nameof(Tags));
         Notify(nameof(Image));
         Notify(nameof(HasCharm));
+        Notify(nameof(IsCustom));
+        Notify(nameof(DeleteVisibility));
         Notify(nameof(PanelVisibility));
         Notify(nameof(PlaceholderVisibility));
         Notify(nameof(RegionVisibility));

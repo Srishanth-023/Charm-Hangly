@@ -6,6 +6,7 @@
 //
 
 using System.Runtime.InteropServices;
+using Hangly.App.Services;
 
 namespace Hangly.App.Tray;
 
@@ -194,13 +195,16 @@ public sealed class TrayIcon : IDisposable
         data.Icon = icon;
         data.Tip = tooltip;
 
-        // Shell_NotifyIcon reports failure by returning false, not by throwing, so an
-        // unchecked call is a tray icon that silently never appears.
+        // Clear any stale icon registration from a previous instance first
+        ShellNotifyIcon(NimDelete, ref data);
+
         if (!ShellNotifyIcon(NimAdd, ref data))
         {
-            throw new InvalidOperationException(
-                $"Shell_NotifyIcon(NIM_ADD) failed (Win32 {Marshal.GetLastWin32Error()}); " +
-                $"window={window}, icon={icon}, cbSize={data.Size}.");
+            Thread.Sleep(50);
+            if (!ShellNotifyIcon(NimAdd, ref data))
+            {
+                Diagnostics.Log($"Shell_NotifyIcon(NIM_ADD) failed (Win32 {Marshal.GetLastWin32Error()})");
+            }
         }
     }
 

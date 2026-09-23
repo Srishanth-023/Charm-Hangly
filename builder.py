@@ -200,15 +200,33 @@ def verify_payload(output_dir: Path) -> bool:
             print(f"  - {m}")
         return False
 
+    main_exe = output_dir / "Portable" / "Hangly.exe"
+    if not main_exe.is_file():
+        main_exe = output_dir / "Hangly.exe"
+
     print(f"[builder] Payload verified successfully!")
-    print(f"  - Main executable: {output_dir / 'Hangly.exe'}")
+    print(f"  - Main executable: {main_exe}")
+    setup_exe = output_dir / "Hangly-Setup.exe"
+    if setup_exe.is_file():
+        print(f"  - Desktop Installer: {setup_exe}")
     print(f"  - Verified {len(svg_files)} SVG charm assets")
     print(f"  - Verified WinUI, Win2D, SkiaSharp, and PRI resource map")
     return True
 
 
+def find_vpk_tool() -> Path | None:
+    """Finds the Velopack (vpk) packaging CLI."""
+    user_tools = Path(os.environ.get("USERPROFILE", "")) / ".dotnet" / "tools" / "vpk.exe"
+    if user_tools.is_file():
+        return user_tools
+    p = shutil.which("vpk")
+    if p:
+        return Path(p)
+    return None
+
+
 def publish_target(dotnet_exe: Path, arch: str, config: str) -> bool:
-    """Publishes a self-contained executable for the given architecture."""
+    """Publishes a self-contained executable and installer for the given architecture."""
     if arch not in TARGET_MAP:
         print(f"[builder] Error: Unsupported architecture '{arch}'. Supported: {list(TARGET_MAP.keys())}")
         return False
@@ -218,7 +236,16 @@ def publish_target(dotnet_exe: Path, arch: str, config: str) -> bool:
     platform_name = target_info["platform"]
     output_dir = BUILD_DIR / rid
 
-    print(f"\n[builder] Publishing target: {rid} ({platform_name}) [{config}] -> {output_dir}")
+    # Clean existing target output
+    if output_dir.is_dir():
+        shutil.rmtree(output_dir, ignore_errors=True)
+
+    portable_dir = output_dir / "Portable"
+    packages_dir = output_dir / "Packages"
+    portable_dir.mkdir(parents=True, exist_ok=True)
+    packages_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"\n[builder] Publishing target: {rid} ({platform_name}) [{config}] -> {portable_dir}")
     env = get_build_env(dotnet_exe)
 
     cmd = [
@@ -231,13 +258,62 @@ def publish_target(dotnet_exe: Path, arch: str, config: str) -> bool:
         rid,
         f"-p:Platform={platform_name}",
         "-o",
-        str(output_dir),
+        str(portable_dir),
     ]
 
     code = run_command(cmd, env)
     if code != 0:
         print(f"[builder] Publish for {rid} FAILED with exit code {code}")
         return False
+
+    # Remove any leftover .pdb files from the portable release folder
+    for pdb in portable_dir.rglob("*.pdb"):
+        try:
+            pdb.unlink()
+        except OSError:
+            pass
+
+    # Ensure resources.pri exists (WinUI 3 unpackaged apps expect resources.pri)
+    hangly_pri = portable_dir / "Hangly.pri"
+    resources_pri = portable_dir / "resources.pri"
+    if hangly_pri.is_file() and not resources_pri.is_file():
+        shutil.copy2(hangly_pri, resources_pri)
+        print(f"[builder] Created resources.pri from Hangly.pri")
+
+    # Build Velopack Desktop Application Installer
+    vpk_tool = find_vpk_tool()
+    if vpk_tool:
+        print(f"\n[builder] Creating Desktop Application Installer using Velopack...")
+        vpk_cmd = [
+            str(vpk_tool),
+            "pack",
+            "-u", "Hangly",
+            "-v", "0.9.0",
+            "--packTitle", "Hangly",
+            "--packAuthors", "sharancreatedthis",
+            "-p", str(portable_dir),
+            "-o", str(packages_dir),
+            "-c", rid,
+            "-r", rid,
+            "-e", "Hangly.exe",
+            "--shortcuts", "Desktop,StartMenuRoot",
+        ]
+        icon_path = SRC_DIR / "Hangly.App" / "Assets" / "hangly.ico"
+        if icon_path.is_file():
+            vpk_cmd.extend(["-i", str(icon_path)])
+
+        vpk_code = run_command(vpk_cmd, env)
+        if vpk_code == 0:
+            setup_candidates = list(packages_dir.glob("*Setup.exe"))
+            if setup_candidates:
+                installer_exe = setup_candidates[0]
+                dest_installer = output_dir / "Hangly-Setup.exe"
+                shutil.copy2(installer_exe, dest_installer)
+                print(f"[builder] Desktop Application Installer ready: {dest_installer}")
+        else:
+            print(f"[builder] Warning: Velopack installer creation returned code {vpk_code}")
+    else:
+        print("[builder] Warning: vpk tool not found. Installer was not generated.")
 
     return verify_payload(output_dir)
 
