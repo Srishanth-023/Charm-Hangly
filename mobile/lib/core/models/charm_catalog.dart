@@ -1,0 +1,516 @@
+import 'package:flutter/material.dart';
+import '../../features/hangly_scene/physics/charm_metrics.dart';
+import 'charm.dart';
+
+class CharmCatalog {
+  static const List<CharmCategory> categories = [
+    CharmCategory(id: 'all', name: 'All Charms', icon: Icons.auto_awesome),
+    CharmCategory(id: 'protection', name: 'Protection', icon: Icons.shield),
+    CharmCategory(id: 'luck', name: 'Luck & Fortune', icon: Icons.monetization_on),
+    CharmCategory(id: 'ritual', name: 'Ritual & Home', icon: Icons.home),
+    CharmCategory(id: 'classic', name: 'Classic', icon: Icons.star),
+    CharmCategory(id: 'marvel', name: 'Marvel', icon: Icons.flash_on),
+    CharmCategory(id: 'dc', name: 'DC', icon: Icons.shield_outlined),
+    CharmCategory(id: 'tamilSpiritual', name: 'Tamil Spiritual', icon: Icons.brightness_7),
+    CharmCategory(id: 'bts', name: 'BTS', icon: Icons.favorite),
+    CharmCategory(id: 'football', name: 'Football', icon: Icons.sports_soccer),
+    CharmCategory(id: 'music', name: 'Music', icon: Icons.music_note),
+    CharmCategory(id: 'friends', name: 'Friends', icon: Icons.coffee),
+    CharmCategory(id: 'breakingBad', name: 'Breaking Bad', icon: Icons.science),
+    CharmCategory(id: 'strangerThings', name: 'Stranger Things', icon: Icons.lightbulb),
+  ];
+
+  static const Charm defaultCharm = Charm(
+    id: 'nazar',
+    name: 'Nazar Boncuğu',
+    category: 'protection',
+    assetPath: 'assets/charms/Nazar Boncuğu.svg',
+    metrics: CharmMetrics(mass: 2.8, radiusRatio: 0.126, knotInset: 0.90),
+    primaryColor: Color(0xFF1E88E5),
+    description: 'The blue eye amulet from the Mediterranean to ward off the evil eye.',
+  );
+
+  static const List<Charm> all = [
+    // Protection
+    defaultCharm,
+    Charm(
+      id: 'hamsa',
+      name: 'Hamsa',
+      category: 'protection',
+      assetPath: 'assets/charms/Hamsa.svg',
+      metrics: CharmMetrics(mass: 2.6, radiusRatio: 0.130, knotInset: 0.88),
+      primaryColor: Color(0xFF26A69A),
+      description: 'The ancient open palm sign of protection, strength, and blessings.',
+    ),
+    Charm(
+      id: 'dreamcatcher',
+      name: 'Dream Catcher',
+      category: 'protection',
+      assetPath: 'assets/charms/Dream Catcher.svg',
+      metrics: CharmMetrics(mass: 2.4, radiusRatio: 0.140, knotInset: 0.92),
+      primaryColor: Color(0xFF8D6E63),
+      description: 'Handcrafted web designed to trap nightmares and let good dreams slide down.',
+    ),
+    Charm(
+      id: 'scarab',
+      name: 'Scarab',
+      category: 'protection',
+      assetPath: 'assets/charms/Scarab.svg',
+      metrics: CharmMetrics(mass: 3.0, radiusRatio: 0.124, knotInset: 0.86),
+      primaryColor: Color(0xFFFFB300),
+      description: 'Ancient Egyptian emblem of rebirth, renewal, and celestial guidance.',
+    ),
+    Charm(
+      id: 'dhrishti_bomma',
+      name: 'Dhrishti Bomma',
+      category: 'protection',
+      assetPath: 'assets/charms/Dhrishti bomma.svg',
+      metrics: CharmMetrics(mass: 3.2, radiusRatio: 0.135, knotInset: 0.90),
+      primaryColor: Color(0xFFE53935),
+      description: 'Traditional fierce guardian mask to repel negativity and ward off jealous glances.',
+    ),
+    Charm(
+      id: 'nimbu_mirchi',
+      name: 'Nimbu Mirchi',
+      category: 'protection',
+      assetPath: 'assets/charms/Nimbu-mirchi.svg',
+      metrics: CharmMetrics(mass: 2.3, radiusRatio: 0.132, knotInset: 0.94),
+      primaryColor: Color(0xFF43A047),
+      description: 'Lemon and green chillies strung to invite peace and absorb misfortune.',
+    ),
+
+    // Luck & Fortune
+    Charm(
+      id: 'daruma',
+      name: 'Daruma',
+      category: 'luck',
+      assetPath: 'assets/charms/Daruma.svg',
+      metrics: CharmMetrics(mass: 3.4, radiusRatio: 0.130, knotInset: 0.88),
+      primaryColor: Color(0xFFD32F2F),
+      description: 'Traditional Japanese hollow doll symbolising perseverance and good fortune.',
+    ),
+    Charm(
+      id: 'maneki_neko',
+      name: 'Maneki Neko',
+      category: 'luck',
+      assetPath: 'assets/charms/Maneki-neko.svg',
+      metrics: CharmMetrics(mass: 2.7, radiusRatio: 0.128, knotInset: 0.90),
+      primaryColor: Color(0xFFFFB300),
+      description: 'The beckoning cat welcoming prosperity, wealth, and happy opportunities.',
+    ),
+    Charm(
+      id: 'horseshoe',
+      name: 'Horseshoe',
+      category: 'luck',
+      assetPath: 'assets/charms/Horseshoe.svg',
+      metrics: CharmMetrics(mass: 3.5, radiusRatio: 0.125, knotInset: 0.85),
+      primaryColor: Color(0xFF78909C),
+      description: 'Forged iron horseshoe pointing upward to capture and hold luck.',
+    ),
+    Charm(
+      id: 'panchang_jie',
+      name: 'Pánchang Jié',
+      category: 'luck',
+      assetPath: 'assets/charms/Pánchang Jié.svg',
+      metrics: CharmMetrics(mass: 2.2, radiusRatio: 0.130, knotInset: 0.92),
+      primaryColor: Color(0xFFC62828),
+      description: 'Mystic Chinese infinity knot representing longevity and boundless fortune.',
+    ),
+
+    // Ritual & Home
+    Charm(
+      id: 'ghanta',
+      name: 'Ghanta (Bell)',
+      category: 'ritual',
+      assetPath: 'assets/charms/Ghanta.svg',
+      metrics: CharmMetrics(mass: 3.2, radiusRatio: 0.126, knotInset: 0.86),
+      primaryColor: Color(0xFFFFC107),
+      description: 'Sacred ritual bell whose resonance clears spiritual stagnant air.',
+    ),
+    Charm(
+      id: 'himmeli',
+      name: 'Himmeli',
+      category: 'ritual',
+      assetPath: 'assets/charms/Himmeli.svg',
+      metrics: CharmMetrics(mass: 2.0, radiusRatio: 0.138, knotInset: 0.92),
+      primaryColor: Color(0xFFFFA000),
+      description: 'Geometric Scandinavian rye straw mobile bringing abundant harvests.',
+    ),
+
+    // Classic
+    Charm(
+      id: 'bead',
+      name: 'Crystal Bead',
+      category: 'classic',
+      assetPath: 'assets/charms/Bead.svg',
+      metrics: CharmMetrics(mass: 2.6, radiusRatio: 0.126, knotInset: 0.90),
+      primaryColor: Color(0xFF42A5F5),
+      description: 'A pure polished spherical stone bead with natural balance.',
+    ),
+    Charm(
+      id: 'star',
+      name: 'Golden Star',
+      category: 'classic',
+      assetPath: 'assets/charms/Star.svg',
+      metrics: CharmMetrics(mass: 2.5, radiusRatio: 0.126, knotInset: 0.88),
+      primaryColor: Color(0xFFFFD54F),
+      description: 'Bright gleaming star guiding you through quiet moments.',
+    ),
+    Charm(
+      id: 'heart',
+      name: 'Heart Pendant',
+      category: 'classic',
+      assetPath: 'assets/charms/Heart.svg',
+      metrics: CharmMetrics(mass: 2.7, radiusRatio: 0.124, knotInset: 0.88),
+      primaryColor: Color(0xFFEC407A),
+      description: 'Sculpted heart pendant filled with warmth and harmony.',
+    ),
+    Charm(
+      id: 'diamond',
+      name: 'Diamond Solitaire',
+      category: 'classic',
+      assetPath: 'assets/charms/Diamond.svg',
+      metrics: CharmMetrics(mass: 2.9, radiusRatio: 0.126, knotInset: 0.86),
+      primaryColor: Color(0xFF80DEEA),
+      description: 'Faceted sparkling gemstone radiating clarity and focus.',
+    ),
+    Charm(
+      id: 'camera',
+      name: 'Vintage Camera',
+      category: 'classic',
+      assetPath: 'assets/charms/Camera.svg',
+      metrics: CharmMetrics(mass: 3.1, radiusRatio: 0.130, knotInset: 0.88),
+      primaryColor: Color(0xFF546E7A),
+      description: 'Classic rangefinder capturing memories that never fade.',
+    ),
+    Charm(
+      id: 'emoji',
+      name: 'Smile Emoji',
+      category: 'classic',
+      assetPath: 'assets/charms/Emoji.svg',
+      metrics: CharmMetrics(mass: 2.4, radiusRatio: 0.120, knotInset: 0.90),
+      primaryColor: Color(0xFFFFCA28),
+      description: 'Cheerful bright smiling face bringing daily joy.',
+    ),
+
+    // Marvel
+    Charm(
+      id: 'iron_man',
+      name: 'Iron Man',
+      category: 'marvel',
+      assetPath: 'assets/charms/Avengers/Iron-Man.svg',
+      metrics: CharmMetrics(mass: 3.2, radiusRatio: 0.130, knotInset: 0.88),
+      primaryColor: Color(0xFFB71C1C),
+      description: 'The golden avenger with arc reactor genius.',
+    ),
+    Charm(
+      id: 'captain_america',
+      name: 'Captain America',
+      category: 'marvel',
+      assetPath: 'assets/charms/Avengers/Captain-America.svg',
+      metrics: CharmMetrics(mass: 3.1, radiusRatio: 0.130, knotInset: 0.88),
+      primaryColor: Color(0xFF1565C0),
+      description: 'The star-spangled vibranium shield of freedom.',
+    ),
+    Charm(
+      id: 'spider_man',
+      name: 'Spider-Man',
+      category: 'marvel',
+      assetPath: 'assets/charms/Avengers/Spider-Man.svg',
+      metrics: CharmMetrics(mass: 2.5, radiusRatio: 0.126, knotInset: 0.90),
+      primaryColor: Color(0xFFD32F2F),
+      description: 'Your friendly neighborhood swinging hero.',
+    ),
+    Charm(
+      id: 'spider_man_swinging',
+      name: 'Spider-Man Swinging',
+      category: 'marvel',
+      assetPath: 'assets/charms/Avengers/Spider-Man Swinging.svg',
+      metrics: CharmMetrics(mass: 2.6, radiusRatio: 0.132, knotInset: 0.92),
+      primaryColor: Color(0xFFC62828),
+      description: 'Mid-air web-slinging pose through the city skyline.',
+    ),
+    Charm(
+      id: 'thor_mjolnir',
+      name: 'Thor Mjölnir',
+      category: 'marvel',
+      assetPath: 'assets/charms/Avengers/Thor Mjölnir.svg',
+      metrics: CharmMetrics(mass: 3.8, radiusRatio: 0.135, knotInset: 0.84),
+      primaryColor: Color(0xFF78909C),
+      description: 'The enchanted Uru hammer of the God of Thunder.',
+    ),
+    Charm(
+      id: 'hulk',
+      name: 'Hulk',
+      category: 'marvel',
+      assetPath: 'assets/charms/Avengers/Hulk.svg',
+      metrics: CharmMetrics(mass: 4.0, radiusRatio: 0.136, knotInset: 0.85),
+      primaryColor: Color(0xFF388E3C),
+      description: 'The unstoppable gamma-powered powerhouse.',
+    ),
+
+    // DC
+    Charm(
+      id: 'batman',
+      name: 'Batman',
+      category: 'dc',
+      assetPath: 'assets/charms/DC/Bat-Man.svg',
+      metrics: CharmMetrics(mass: 3.4, radiusRatio: 0.130, knotInset: 0.88),
+      primaryColor: Color(0xFF212121),
+      description: 'The Dark Knight of Gotham standing vigilant.',
+    ),
+    Charm(
+      id: 'superman',
+      name: 'Superman',
+      category: 'dc',
+      assetPath: 'assets/charms/DC/Super-Man.svg',
+      metrics: CharmMetrics(mass: 3.5, radiusRatio: 0.130, knotInset: 0.88),
+      primaryColor: Color(0xFF1976D2),
+      description: 'The iconic House of El crest of hope.',
+    ),
+    Charm(
+      id: 'flash',
+      name: 'The Flash',
+      category: 'dc',
+      assetPath: 'assets/charms/DC/Flash.svg',
+      metrics: CharmMetrics(mass: 2.4, radiusRatio: 0.124, knotInset: 0.90),
+      primaryColor: Color(0xFFE53935),
+      description: 'Speed Force lightning bolt flashing across reality.',
+    ),
+    Charm(
+      id: 'wonder_woman',
+      name: 'Wonder Woman',
+      category: 'dc',
+      assetPath: 'assets/charms/DC/Wonder Women.svg',
+      metrics: CharmMetrics(mass: 3.0, radiusRatio: 0.128, knotInset: 0.88),
+      primaryColor: Color(0xFFFFA000),
+      description: 'The Amazonian champion of truth and courage.',
+    ),
+    Charm(
+      id: 'green_lantern',
+      name: 'Green Lantern',
+      category: 'dc',
+      assetPath: 'assets/charms/DC/Green Lantern.svg',
+      metrics: CharmMetrics(mass: 2.8, radiusRatio: 0.126, knotInset: 0.88),
+      primaryColor: Color(0xFF2E7D32),
+      description: 'In brightest day, in blackest night willpower ring.',
+    ),
+
+    // Tamil Spiritual
+    Charm(
+      id: 'vinayaga',
+      name: 'Vinayaga',
+      category: 'tamilSpiritual',
+      assetPath: 'assets/charms/Tamil Gods/Vinayaga.svg',
+      metrics: CharmMetrics(mass: 3.3, radiusRatio: 0.132, knotInset: 0.88),
+      primaryColor: Color(0xFFFF8F00),
+      description: 'Lord Ganesha, the auspicious remover of all obstacles.',
+    ),
+    Charm(
+      id: 'muruga_vel',
+      name: 'Muruga Vel',
+      category: 'tamilSpiritual',
+      assetPath: 'assets/charms/Tamil Gods/Muruga Vel.svg',
+      metrics: CharmMetrics(mass: 3.0, radiusRatio: 0.134, knotInset: 0.86),
+      primaryColor: Color(0xFFFFB300),
+      description: 'The divine spear of Murugan signifying supreme wisdom.',
+    ),
+    Charm(
+      id: 'om',
+      name: 'Sacred OM',
+      category: 'tamilSpiritual',
+      assetPath: 'assets/charms/Tamil Gods/OM.svg',
+      metrics: CharmMetrics(mass: 2.7, radiusRatio: 0.128, knotInset: 0.88),
+      primaryColor: Color(0xFFE65100),
+      description: 'The primordial cosmic vibration of serenity and truth.',
+    ),
+    Charm(
+      id: 'karuppu',
+      name: 'Karuppu Sami',
+      category: 'tamilSpiritual',
+      assetPath: 'assets/charms/Tamil Gods/Karuppu.svg',
+      metrics: CharmMetrics(mass: 3.5, radiusRatio: 0.135, knotInset: 0.86),
+      primaryColor: Color(0xFFBF360C),
+      description: 'The formidable guardian deity protecting villages and boundaries.',
+    ),
+    Charm(
+      id: 'mani',
+      name: 'Temple Mani',
+      category: 'tamilSpiritual',
+      assetPath: 'assets/charms/Tamil Gods/Mani.svg',
+      metrics: CharmMetrics(mass: 3.1, radiusRatio: 0.128, knotInset: 0.88),
+      primaryColor: Color(0xFFFFC107),
+      description: 'Traditional sacred chime filling spaces with holy resonance.',
+    ),
+
+    // Football
+    Charm(
+      id: 'messi',
+      name: 'Messi 10',
+      category: 'football',
+      assetPath: 'assets/charms/Football/Messi 10.svg',
+      metrics: CharmMetrics(mass: 2.8, radiusRatio: 0.128, knotInset: 0.88),
+      primaryColor: Color(0xFF00B0FF),
+      description: 'The legendary number 10 world champion of magic dribbles.',
+    ),
+    Charm(
+      id: 'ronaldo',
+      name: 'Ronaldo 7',
+      category: 'football',
+      assetPath: 'assets/charms/Football/Ronaldo 7.svg',
+      metrics: CharmMetrics(mass: 2.9, radiusRatio: 0.128, knotInset: 0.88),
+      primaryColor: Color(0xFFD50000),
+      description: 'CR7 iconic greatness, relentless determination, and celebration.',
+    ),
+    Charm(
+      id: 'neymar',
+      name: 'Neymar 10',
+      category: 'football',
+      assetPath: 'assets/charms/Football/Neymar 10.svg',
+      metrics: CharmMetrics(mass: 2.7, radiusRatio: 0.128, knotInset: 0.88),
+      primaryColor: Color(0xFFFFD600),
+      description: 'Samba flair, dazzling steps, and joyful football poetry.',
+    ),
+    Charm(
+      id: 'barcelona',
+      name: 'FC Barcelona',
+      category: 'football',
+      assetPath: 'assets/charms/Football/FC Barcelona.svg',
+      metrics: CharmMetrics(mass: 3.0, radiusRatio: 0.130, knotInset: 0.88),
+      primaryColor: Color(0xFF880E4F),
+      description: 'Més que un club timeless Blaugrana badge.',
+    ),
+    Charm(
+      id: 'real_madrid',
+      name: 'Real Madrid',
+      category: 'football',
+      assetPath: 'assets/charms/Football/Real Madrid.svg',
+      metrics: CharmMetrics(mass: 3.0, radiusRatio: 0.130, knotInset: 0.88),
+      primaryColor: Color(0xFF3949AB),
+      description: 'The royal crest of kings and European triumphs.',
+    ),
+
+    // Music
+    Charm(
+      id: 'taylor_swift',
+      name: 'Taylor Swift',
+      category: 'music',
+      assetPath: 'assets/charms/Music/Taylor Swift.svg',
+      metrics: CharmMetrics(mass: 2.6, radiusRatio: 0.126, knotInset: 0.90),
+      primaryColor: Color(0xFFCE93D8),
+      description: 'Lover and folklore storytelling songstress.',
+    ),
+    Charm(
+      id: 'billie_eilish',
+      name: 'Billie Eilish',
+      category: 'music',
+      assetPath: 'assets/charms/Music/Billie Eilish.svg',
+      metrics: CharmMetrics(mass: 2.6, radiusRatio: 0.126, knotInset: 0.90),
+      primaryColor: Color(0xFF00E676),
+      description: 'Neon green aesthetic and whispering soul ballads.',
+    ),
+    Charm(
+      id: 'michael_jackson',
+      name: 'Michael Jackson',
+      category: 'music',
+      assetPath: 'assets/charms/Music/Michael Jackson.svg',
+      metrics: CharmMetrics(mass: 2.8, radiusRatio: 0.128, knotInset: 0.88),
+      primaryColor: Color(0xFF212121),
+      description: 'The King of Pop moonwalking through history.',
+    ),
+    Charm(
+      id: 'the_weeknd',
+      name: 'The Weeknd',
+      category: 'music',
+      assetPath: 'assets/charms/Music/The Weeknd.svg',
+      metrics: CharmMetrics(mass: 2.7, radiusRatio: 0.128, knotInset: 0.88),
+      primaryColor: Color(0xFFD50000),
+      description: 'Blinding Lights synthwave night groove.',
+    ),
+
+    // Breaking Bad
+    Charm(
+      id: 'walter_white',
+      name: 'Walter White',
+      category: 'breakingBad',
+      assetPath: 'assets/charms/Breaking Bad/Walter White.svg',
+      metrics: CharmMetrics(mass: 3.0, radiusRatio: 0.128, knotInset: 0.88),
+      primaryColor: Color(0xFF00838F),
+      description: 'Chemistry teacher turned Albuquerque legend.',
+    ),
+    Charm(
+      id: 'heisenberg',
+      name: 'Heisenberg',
+      category: 'breakingBad',
+      assetPath: 'assets/charms/Breaking Bad/Heisenberg.svg',
+      metrics: CharmMetrics(mass: 3.1, radiusRatio: 0.128, knotInset: 0.88),
+      primaryColor: Color(0xFF263238),
+      description: 'The pork pie hat sketch of the one who knocks.',
+    ),
+    Charm(
+      id: 'jesse_pinkman',
+      name: 'Jesse Pinkman',
+      category: 'breakingBad',
+      assetPath: 'assets/charms/Breaking Bad/Jesse Pinkman.svg',
+      metrics: CharmMetrics(mass: 2.7, radiusRatio: 0.126, knotInset: 0.90),
+      primaryColor: Color(0xFFFFB300),
+      description: 'Loyal partner navigating chaotic chemistry.',
+    ),
+    Charm(
+      id: 'saul_goodman',
+      name: 'Saul Goodman',
+      category: 'breakingBad',
+      assetPath: 'assets/charms/Breaking Bad/Saul Goodman.svg',
+      metrics: CharmMetrics(mass: 2.9, radiusRatio: 0.128, knotInset: 0.88),
+      primaryColor: Color(0xFFFDD835),
+      description: 'Better Call Saul slick suit and quick solutions.',
+    ),
+
+    // Stranger Things
+    Charm(
+      id: 'eleven',
+      name: 'Eleven',
+      category: 'strangerThings',
+      assetPath: 'assets/charms/Stranger Things/Eleven.svg',
+      metrics: CharmMetrics(mass: 2.6, radiusRatio: 0.126, knotInset: 0.90),
+      primaryColor: Color(0xFFF48FB1),
+      description: 'Telekinetic hero with a love for waffles.',
+    ),
+    Charm(
+      id: 'demogorgon',
+      name: 'Demogorgon',
+      category: 'strangerThings',
+      assetPath: 'assets/charms/Stranger Things/Demogorgon.svg',
+      metrics: CharmMetrics(mass: 3.3, radiusRatio: 0.134, knotInset: 0.86),
+      primaryColor: Color(0xFF37474F),
+      description: 'Flower-faced apex predator from the Upside Down.',
+    ),
+    Charm(
+      id: 'dustin',
+      name: 'Dustin Henderson',
+      category: 'strangerThings',
+      assetPath: 'assets/charms/Stranger Things/Dustin Henderson.svg',
+      metrics: CharmMetrics(mass: 2.7, radiusRatio: 0.128, knotInset: 0.88),
+      primaryColor: Color(0xFF1E88E5),
+      description: 'Cerebro radio operator with quick wits.',
+    ),
+  ];
+
+  static Charm byId(String id) {
+    return all.firstWhere((c) => c.id == id, orElse: () => defaultCharm);
+  }
+
+  static List<Charm> byCategory(String category) {
+    if (category == 'all') return all;
+    return all.where((c) => c.category == category).toList();
+  }
+
+  static List<Charm> search(String query) {
+    if (query.trim().isEmpty) return all;
+    final q = query.toLowerCase().trim();
+    return all.where((c) =>
+        c.name.toLowerCase().contains(q) ||
+        c.description.toLowerCase().contains(q) ||
+        c.category.toLowerCase().contains(q)).toList();
+  }
+}

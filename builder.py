@@ -23,6 +23,8 @@ REPO_ROOT = Path(__file__).resolve().parent
 SRC_DIR = REPO_ROOT / "src"
 TESTS_DIR = REPO_ROOT / "tests"
 BUILD_DIR = REPO_ROOT / "build"
+MOBILE_DIR = REPO_ROOT / "mobile"
+MOBILE_BUILD_DIR = BUILD_DIR / "mobile"
 APP_CSPROJ = SRC_DIR / "Hangly.App" / "Hangly.App.csproj"
 TEST_CSPROJ = TESTS_DIR / "Hangly.Core.Tests" / "Hangly.Core.Tests.csproj"
 
@@ -385,8 +387,148 @@ def collect_github_releases():
     print(f"[builder] Collected {count} GitHub Release assets with unique filenames in: {dist_dir}")
 
 
+def check_mobile_prerequisites() -> Path:
+    """Verifies that Flutter and Dart are installed and available."""
+    flutter_bin = shutil.which("flutter")
+    if not flutter_bin:
+        raise RuntimeError("Flutter SDK not found in PATH. Please install Flutter.")
+    dart_bin = shutil.which("dart")
+    if not dart_bin:
+        raise RuntimeError("Dart SDK not found in PATH.")
+
+    # Check flutter version
+    try:
+        res = subprocess.run([flutter_bin, "--version"], capture_output=True, text=True, check=False)
+        if res.returncode == 0:
+            first_line = res.stdout.strip().splitlines()[0] if res.stdout else "Flutter"
+            print(f"[builder] Found Flutter SDK: {first_line}")
+    except Exception:
+        pass
+
+    return Path(flutter_bin)
+
+
+def run_mobile_tests(flutter_bin: Path) -> bool:
+    """Runs the Flutter test suite in mobile/."""
+    print("\n[builder] Running Flutter tests in mobile/...")
+    if not MOBILE_DIR.is_dir():
+        print(f"[builder] Error: Mobile directory not found at {MOBILE_DIR}")
+        return False
+
+    proc = subprocess.run([str(flutter_bin), "test"], cwd=str(MOBILE_DIR))
+    if proc.returncode == 0:
+        print("[builder] Flutter tests passed successfully.")
+        return True
+    else:
+        print("[builder] Error: Flutter tests failed.")
+        return False
+
+
+def build_mobile(flutter_bin: Path, config: str = "Release") -> bool:
+    """Builds the Flutter Android APK and AppBundle and copies artifacts to build/mobile/."""
+    print(f"\n[builder] Building Mobile Flutter Android Application ({config})...")
+    if not MOBILE_DIR.is_dir():
+        print(f"[builder] Error: Mobile directory not found at {MOBILE_DIR}")
+        return False
+
+    apk_out = MOBILE_BUILD_DIR / "apk"
+    bundle_out = MOBILE_BUILD_DIR / "bundle"
+    apk_out.mkdir(parents=True, exist_ok=True)
+    bundle_out.mkdir(parents=True, exist_ok=True)
+
+    is_release = config.lower() == "release"
+    mode_flag = "--release" if is_release else "--debug"
+
+    # 1. Build APK
+    print(f"[builder] Building Android APK ({mode_flag})...")
+    apk_cmd = [str(flutter_bin), "build", "apk", mode_flag]
+    apk_proc = subprocess.run(apk_cmd, cwd=str(MOBILE_DIR))
+    if apk_proc.returncode != 0:
+        print("[builder] Error: Flutter APK build failed.")
+        return False
+
+    # Copy generated APK(s) to build/mobile/apk/
+    built_apk_dir = MOBILE_DIR / "build" / "app" / "outputs" / "flutter-apk"
+    apk_copied = 0
+    if built_apk_dir.is_dir():
+        for apk_file in built_apk_dir.glob("*.apk"):
+            dest = apk_out / apk_file.name
+            shutil.copy2(apk_file, dest)
+            size_mb = dest.stat().st_size / (1024 * 1024)
+            print(f"[builder] Produced APK artifact: {dest} ({size_mb:.2f} MB)")
+            apk_copied += 1
+
+    if apk_copied == 0:
+        print("[builder] Warning: No APK output file found to copy.")
+
+    # 2. Build AppBundle (for Play Store release) if Release
+    if is_release:
+        print("\n[builder] Building Android AppBundle (--release)...")
+        aab_cmd = [str(flutter_bin), "build", "appbundle", "--release"]
+        aab_proc = subprocess.run(aab_cmd, cwd=str(MOBILE_DIR))
+        if aab_proc.returncode == 0:
+            built_bundle_dir = MOBILE_DIR / "build" / "app" / "outputs" / "bundle" / "release"
+            if built_bundle_dir.is_dir():
+                for aab_file in built_bundle_dir.glob("*.aab"):
+                    dest = bundle_out / aab_file.name
+                    shutil.copy2(aab_file, dest)
+                    size_mb = dest.stat().st_size / (1024 * 1024)
+                    print(f"[builder] Produced AppBundle artifact: {dest} ({size_mb:.2f} MB)")
+        else:
+            print("[builder] Warning: AppBundle build failed or was skipped.")
+
+    print(f"\n[builder] Mobile artifacts successfully staged in: {MOBILE_BUILD_DIR}")
+    return apk_copied > 0
+
+
+def prompt_target_interactive() -> str:
+    """Interactively prompts the user to select what target to build."""
+    print("=" * 60)
+    print(" Hangly Build Target Selection")
+    print("=" * 60)
+    print(" Choose what to build:")
+    print("   1) mobile - Build Android Flutter App (APK & App Bundle)")
+    print("   2) x64    - Build Windows x64 Distribution & Tests")
+    print("   3) arm64  - Build Windows ARM64 Distribution & Tests")
+    print("=" * 60)
+
+    while True:
+        try:
+            choice = input("Select target [1/2/3 or mobile/x64/arm64, or 'q' to quit]: ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            print("\n[builder] Build cancelled by user.")
+            sys.exit(0)
+
+        if choice in ["1", "mobile"]:
+            print("[builder] Selected target: mobile (Android Flutter)")
+            return "mobile"
+        elif choice in ["2", "x64"]:
+            print("[builder] Selected target: x64 (Windows x64)")
+            return "x64"
+        elif choice in ["3", "arm64"]:
+            print("[builder] Selected target: arm64 (Windows ARM64)")
+            return "arm64"
+        elif choice in ["q", "quit", "exit"]:
+            print("[builder] Build cancelled by user.")
+            sys.exit(0)
+        else:
+            print(f"[builder] Invalid choice '{choice}'. Please enter 1, 2, 3, mobile, x64, arm64, or q.")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Automated build and packaging tool for Hangly.")
+    parser.add_argument(
+        "--target",
+        "-t",
+        choices=["mobile", "x64", "arm64", "all"],
+        default=None,
+        help="Target platform to build: mobile, x64, arm64, or all",
+    )
+    parser.add_argument(
+        "--mobile",
+        action="store_true",
+        help="Build Flutter mobile Android application",
+    )
     parser.add_argument(
         "--configuration",
         "-c",
@@ -398,8 +540,8 @@ def main():
         "--arch",
         "-a",
         choices=["x64", "arm64"],
-        default="x64",
-        help="Target architecture (default: x64)",
+        default=None,
+        help="Target architecture for Windows (default: x64)",
     )
     parser.add_argument("--clean", action="store_true", help="Clean build and bin/obj directories")
     parser.add_argument("--test", action="store_true", help="Run unit test suite")
@@ -412,14 +554,43 @@ def main():
 
     args = parser.parse_args()
 
-    # Determine default action if none specified
-    if not (args.clean or args.test or args.publish or args.all):
+    # Determine target: CLI flag vs interactive prompt
+    selected_target = args.target
+    if args.mobile:
+        selected_target = "mobile"
+    elif args.all:
+        selected_target = "all"
+    elif args.arch:
+        selected_target = args.arch
+
+    # If no target specified and running in interactive terminal, prompt the user
+    if selected_target is None and sys.stdin.isatty() and not (args.clean and not (args.test or args.publish)):
+        selected_target = prompt_target_interactive()
+    elif selected_target is None:
+        # Default fallback for automated non-interactive runs
+        selected_target = "x64"
+
+    # Determine default actions if none explicitly specified
+    if not (args.clean or args.test or args.publish):
         args.test = True
         args.publish = True
 
     if args.clean:
         clean_artifacts()
 
+    # Execute Mobile target
+    if selected_target == "mobile":
+        flutter_bin = check_mobile_prerequisites()
+        if args.test:
+            if not run_mobile_tests(flutter_bin):
+                sys.exit(1)
+        if args.publish:
+            if not build_mobile(flutter_bin, args.configuration):
+                sys.exit(1)
+        print("\n[builder] Mobile target completed successfully.")
+        sys.exit(0)
+
+    # Execute Windows targets
     dotnet_exe = find_dotnet_sdk()
 
     success = True
@@ -428,13 +599,14 @@ def main():
         if not test_ok:
             sys.exit(1)
 
-    if args.all:
+    if selected_target == "all":
         for arch in ["x64", "arm64"]:
             ok = publish_target(dotnet_exe, arch, args.configuration)
             if not ok:
                 success = False
     elif args.publish:
-        ok = publish_target(dotnet_exe, args.arch, args.configuration)
+        target_arch = selected_target if selected_target in ["x64", "arm64"] else "x64"
+        ok = publish_target(dotnet_exe, target_arch, args.configuration)
         if not ok:
             success = False
 
@@ -442,7 +614,7 @@ def main():
         print("\n[builder] One or more publish steps FAILED.")
         sys.exit(1)
 
-    if args.all or args.publish:
+    if selected_target == "all" or args.publish:
         collect_github_releases()
 
     print("\n[builder] All tasks completed successfully.")
