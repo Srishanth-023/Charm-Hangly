@@ -205,10 +205,12 @@ def verify_payload(output_dir: Path) -> bool:
         main_exe = output_dir / "Hangly.exe"
 
     print(f"[builder] Payload verified successfully!")
-    print(f"  - Main executable: {main_exe}")
-    setup_exe = output_dir / "Hangly-Setup.exe"
-    if setup_exe.is_file():
-        print(f"  - Desktop Installer: {setup_exe}")
+    setup_candidates = list(output_dir.glob("*Setup*.exe"))
+    if setup_candidates:
+        print(f"  - Desktop Installer: {setup_candidates[0]}")
+    zip_candidates = list(output_dir.glob("*Portable*.zip"))
+    if zip_candidates:
+        print(f"  - Portable Archive: {zip_candidates[0]}")
     print(f"  - Verified {len(svg_files)} SVG charm assets")
     print(f"  - Verified WinUI, Win2D, SkiaSharp, and PRI resource map")
     return True
@@ -307,15 +309,63 @@ def publish_target(dotnet_exe: Path, arch: str, config: str) -> bool:
             setup_candidates = list(packages_dir.glob("*Setup.exe"))
             if setup_candidates:
                 installer_exe = setup_candidates[0]
-                dest_installer = output_dir / "Hangly-Setup.exe"
+                dest_installer = output_dir / f"Hangly-Setup-{arch}.exe"
                 shutil.copy2(installer_exe, dest_installer)
                 print(f"[builder] Desktop Application Installer ready: {dest_installer}")
+            portable_zip_candidates = list(packages_dir.glob("*Portable.zip"))
+            if portable_zip_candidates:
+                portable_zip = portable_zip_candidates[0]
+                dest_portable_zip = output_dir / f"Hangly-Portable-{arch}.zip"
+                shutil.copy2(portable_zip, dest_portable_zip)
+                print(f"[builder] Portable package ready: {dest_portable_zip}")
         else:
             print(f"[builder] Warning: Velopack installer creation returned code {vpk_code}")
     else:
         print("[builder] Warning: vpk tool not found. Installer was not generated.")
 
     return verify_payload(output_dir)
+
+
+def collect_github_releases():
+    """
+    Consolidates all architecture-differentiated release assets into build/github-release/
+    with guaranteed unique filenames, ready for direct upload into a GitHub Release.
+    """
+    dist_dir = BUILD_DIR / "github-release"
+    if dist_dir.is_dir():
+        shutil.rmtree(dist_dir, ignore_errors=True)
+    dist_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"\n[builder] Consolidating GitHub Release assets -> {dist_dir}")
+    count = 0
+    for arch in ["x64", "arm64"]:
+        target_info = TARGET_MAP[arch]
+        rid = target_info["rid"]
+        output_dir = BUILD_DIR / rid
+        if not output_dir.is_dir():
+            continue
+
+        # 1. Desktop Application Installer (e.g. Hangly-Setup-x64.exe)
+        setup_exe = output_dir / f"Hangly-Setup-{arch}.exe"
+        if setup_exe.is_file():
+            shutil.copy2(setup_exe, dist_dir / setup_exe.name)
+            count += 1
+
+        # 2. Standalone Portable Zip (e.g. Hangly-Portable-x64.zip)
+        portable_zip = output_dir / f"Hangly-Portable-{arch}.zip"
+        if portable_zip.is_file():
+            shutil.copy2(portable_zip, dist_dir / portable_zip.name)
+            count += 1
+
+        # 3. Velopack packages (nupkg, RELEASES, releases.json)
+        packages_dir = output_dir / "Packages"
+        if packages_dir.is_dir():
+            for p in packages_dir.iterdir():
+                if p.is_file() and not p.name.endswith(".exe") and not p.name.endswith(".zip"):
+                    shutil.copy2(p, dist_dir / p.name)
+                    count += 1
+
+    print(f"[builder] Collected {count} GitHub Release assets with unique filenames in: {dist_dir}")
 
 
 def main():
@@ -374,6 +424,9 @@ def main():
     if not success:
         print("\n[builder] One or more publish steps FAILED.")
         sys.exit(1)
+
+    if args.all or args.publish:
+        collect_github_releases()
 
     print("\n[builder] All tasks completed successfully.")
     sys.exit(0)
