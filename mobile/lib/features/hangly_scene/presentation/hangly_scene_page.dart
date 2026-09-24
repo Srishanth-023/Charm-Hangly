@@ -67,9 +67,12 @@ class _HanglyScenePageState extends State<HanglyScenePage>
     _hanglyChannel = HanglyChannel();
 
     _sensorService = MotionSensorService(
-      onSway: (speed) {
+      onGravity: (gx, gy) {
         if (_settings.deviceMotionEnabled) {
-          _simulation.sway(speed * _settings.physicsStrength);
+          final strength = _settings.physicsStrength;
+          final dirX = gx * strength;
+          final dirY = (gy > 0) ? math.max(0.5, gy) : math.min(-0.5, gy);
+          _simulation.setGravityDirection(Vec2(dirX, dirY));
           if (!_ticker.isActive) {
             _ticker.start();
           }
@@ -205,8 +208,8 @@ class _HanglyScenePageState extends State<HanglyScenePage>
         ? '#FFD700'
         : '#${_currentCharm.primaryColor.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
 
-    final ropeLen = (_settings.ropeLength * 135.0).clamp(70.0, 240.0);
-    final radius = (_settings.charmSize * 25.0).clamp(16.0, 48.0);
+    final ropeLen = (_settings.ropeLength * 135.0).clamp(50.0, 320.0);
+    final radius = (_settings.charmSize * 25.0).clamp(12.0, 60.0);
 
     // Call native startOverlayService immediately without blocking on async work
     _hanglyChannel.startOverlayService(
@@ -399,12 +402,14 @@ class _HanglyScenePageState extends State<HanglyScenePage>
       ),
     );
 
-    if (updated != null && mounted) {
+    final effective = updated ?? await widget.storage.loadSettings();
+
+    if (mounted) {
       setState(() {
-        _settings = updated;
-        _currentCharm = CharmCatalog.byId(updated.selectedCharmId);
-        _haptics.enabled = updated.hapticsEnabled;
-        _sensorService.updateEnabled(updated.deviceMotionEnabled);
+        _settings = effective;
+        _currentCharm = CharmCatalog.byId(effective.selectedCharmId);
+        _haptics.enabled = effective.hapticsEnabled;
+        _sensorService.updateEnabled(effective.deviceMotionEnabled);
       });
 
       _applySettingsToSimulation();
@@ -517,10 +522,10 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                   ),
                 ),
 
-              // 3. Quick Action Bar (Top Right)
+              // 3. Quick Action Bar (Top Left, balanced with top-right charm)
               Positioned(
                 top: MediaQuery.of(context).padding.top + 12,
-                right: 16,
+                left: 16,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

@@ -44,7 +44,10 @@ class RopeConfiguration {
     this.charmSizeScale = 1.0,
     this.slackBelow = 0.0,
     this.anchorHeight = 0.0,
+    this.anchorXRatio = 0.5,
   });
+
+  final double anchorXRatio;
 
   int get pointCount => segmentCount + 1;
   double get totalLength => segmentCount * segmentLength;
@@ -52,7 +55,9 @@ class RopeConfiguration {
       (charmUnit > 0 ? charmUnit : totalLength) * charmSizeScale;
 
   Vec2 anchor(double width, double height) =>
-      anchorHeight > 0 ? Vec2(width / 2.0, anchorHeight) : RopeLayout.anchorIn(width, height);
+      anchorHeight > 0
+          ? Vec2(width * anchorXRatio, anchorHeight)
+          : Vec2(width * anchorXRatio, height * RopeLayout.anchorFraction);
 
   static const RopeConfiguration defaultValue = RopeConfiguration();
 
@@ -76,6 +81,7 @@ class RopeConfiguration {
     double? charmSizeScale,
     double? slackBelow,
     double? anchorHeight,
+    double? anchorXRatio,
   }) {
     return RopeConfiguration(
       segmentCount: segmentCount ?? this.segmentCount,
@@ -97,31 +103,30 @@ class RopeConfiguration {
       charmSizeScale: charmSizeScale ?? this.charmSizeScale,
       slackBelow: slackBelow ?? this.slackBelow,
       anchorHeight: anchorHeight ?? this.anchorHeight,
+      anchorXRatio: anchorXRatio ?? this.anchorXRatio,
     );
   }
 
   /// Fits the rope to a canvas size in points.
-  /// On mobile screens, keeps the rope and charm tiny and elegant by default.
+  /// Keeps ropeLength and charmSize cleanly independent and directly scaled.
+  /// Fixes anchor to the top right (between center and right edge at 0.75 * width).
   static RopeConfiguration fitted({
     required double canvasWidth,
     required double canvasHeight,
     double charmSize = 1.0,
     double ropeLength = 1.0,
   }) {
-    final scaleHeight = RopeLayout.anchorFraction +
-        (RopeLayout.lengthFraction * ropeLength) +
-        (RopeLayout.tailFraction * charmSize);
-    final roomHeight = math.max(1.0, scaleHeight);
-
-    // On mobile devices, calibrate reference height so rope rest length is ~130-160dp
-    // and charm diameter is ~45-55dp by default, rather than taking up the whole screen.
-    final targetHeight = math.min(canvasHeight * 0.25, 200.0);
-    final unit = math.max(40.0, targetHeight / roomHeight);
-    final charmUnit = unit * RopeLayout.lengthFraction;
-    final anchorH = math.max(16.0, unit * RopeLayout.anchorFraction);
-
+    // Calibrated base dimensions on mobile:
+    // Base rope total length: 135.0 dp
+    // Base charm unit reference: 50.0 dp
+    const baseRopeLength = 135.0;
+    const baseCharmUnit = 50.0;
     const base = RopeConfiguration.defaultValue;
-    final segLen = (charmUnit * ropeLength) / base.segmentCount;
+
+    final actualRopeLength = (baseRopeLength * ropeLength).clamp(50.0, 320.0);
+    final segLen = actualRopeLength / base.segmentCount;
+    final charmUnit = baseCharmUnit;
+    final anchorH = math.max(16.0, canvasHeight * RopeLayout.anchorFraction);
     final totalLen = base.segmentCount * segLen;
     final slack = math.max(0.0, canvasHeight - anchorH - totalLen);
 
@@ -130,6 +135,7 @@ class RopeConfiguration {
       charmSizeScale: charmSize,
       segmentLength: segLen,
       anchorHeight: anchorH,
+      anchorXRatio: 0.75, // Fixed to top right (between center and right edge)
       slackBelow: slack,
     );
   }
@@ -145,7 +151,7 @@ class RopeLayout {
   static double get tailFraction => 1.0 - anchorFraction - lengthFraction;
 
   static Vec2 anchorIn(double width, double height) =>
-      Vec2(width / 2.0, height * anchorFraction);
+      Vec2(width * 0.75, height * anchorFraction);
 
   static List<int> attachments(int charmCount, int segmentCount) {
     final charms = charmCount.clamp(1, CharmStack.maximumCount);

@@ -101,6 +101,17 @@ class RopeSimulation {
     wake();
   }
 
+  Vec2 gravityDirection = const Vec2(0, 1);
+
+  void setGravityDirection(Vec2 direction) {
+    if (direction.magnitudeSquared < 1e-6) return;
+    final norm = direction.normalized;
+    if ((norm - gravityDirection).magnitudeSquared > 0.0004) {
+      gravityDirection = norm;
+      wake();
+    }
+  }
+
   void fit({
     required double canvasWidth,
     required double canvasHeight,
@@ -118,13 +129,14 @@ class RopeSimulation {
     );
 
     final needsRebuild = points.length != fitted.pointCount || !isRunning;
+    final lengthChanged = (configuration.segmentLength - fitted.segmentLength).abs() > 0.05;
     final previousAnchor = anchor;
 
     configuration = fitted;
     anchor = fitted.anchor(canvasWidth, canvasHeight);
     charmLayout = CharmStackLayout.resolve(charmStackMetrics, configuration);
 
-    if (needsRebuild) {
+    if (needsRebuild || lengthChanged) {
       reset();
     } else {
       final shift = anchor - previousAnchor;
@@ -180,7 +192,8 @@ class RopeSimulation {
   }
 
   void integrate(double timeStep) {
-    final gravityStep = Vec2(0, configuration.gravity * timeStep * timeStep);
+    final gravityMag = configuration.gravity * timeStep * timeStep;
+    final gravityStep = gravityDirection * gravityMag;
     final damping = configuration.damping;
     final displacementLimit = configuration.maximumSpeed * timeStep;
 
