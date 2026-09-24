@@ -26,8 +26,12 @@ class MotionSensorService {
         (AccelerometerEvent event) {
           if (!enabled) return;
 
-          // Apply deadzone to prevent hand jitter while holding still
-          double targetX = event.x / 9.81;
+          // Apply deadzone to prevent hand jitter while holding still.
+          // In Android/sensors_plus, tilting the device to the right produces a negative
+          // event.x value (measuring support force against gravity). Negating event.x
+          // gives positive gravity in screen coordinates (+X = right), correctly swinging
+          // the charm to the right when tilted right, and left when tilted left.
+          double targetX = -event.x / 9.81;
           if (targetX.abs() < 0.06) {
             targetX = 0.0;
           } else {
@@ -47,7 +51,7 @@ class MotionSensorService {
 
           // Support legacy onSway callback if provided
           if (onSway != null && targetX.abs() > 0.02) {
-            onSway!(-targetX * 25.0);
+            onSway!(targetX * 25.0);
           }
         },
         onError: (_) {

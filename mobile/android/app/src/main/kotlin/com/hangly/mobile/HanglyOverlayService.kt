@@ -230,7 +230,10 @@ class HanglyOverlayService : Service() {
         sensorListener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent?) {
                 if (event == null) return
-                var rawX = event.values[0] / 9.81f
+                // Android accelerometer measures proper acceleration (reaction force: -Gx).
+                // When tilted right, event.values[0] is negative.
+                // Negating it gives positive gravity pointing towards the right in screen coordinates (+X = right).
+                var rawX = -event.values[0] / 9.81f
                 val rawY = event.values[1] / 9.81f
 
                 // Deadzone to prevent small hand vibrations from shaking the charm
