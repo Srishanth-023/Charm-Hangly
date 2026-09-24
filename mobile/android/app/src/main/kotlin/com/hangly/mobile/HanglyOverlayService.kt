@@ -26,10 +26,10 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
+import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.hypot
 import kotlin.math.max
-import kotlin.math.min
 
 class HanglyOverlayService : Service() {
 
@@ -45,8 +45,23 @@ class HanglyOverlayService : Service() {
     }
 
     private var windowManager: WindowManager? = null
-    private var overlayView: OverlayView? = null
+    var displayView: DisplayOverlayView? = null
+        private set
+    var anchorTouchView: AnchorTouchView? = null
+        private set
+    var charmTouchView: CharmTouchView? = null
+        private set
     private var screenReceiver: BroadcastReceiver? = null
+
+    private var displayParams: WindowManager.LayoutParams? = null
+    private var anchorTouchParams: WindowManager.LayoutParams? = null
+    private var charmTouchParams: WindowManager.LayoutParams? = null
+
+    var anchorX: Float = 0f
+        private set
+    var anchorY: Float = 0f
+        private set
+    var isAnchorDragging: Boolean = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -83,8 +98,10 @@ class HanglyOverlayService : Service() {
                 return START_NOT_STICKY
             }
             ACTION_HIDE_OVERLAY -> {
-                overlayView?.visibility = View.GONE
-                overlayView?.pause()
+                displayView?.visibility = View.GONE
+                anchorTouchView?.visibility = View.GONE
+                charmTouchView?.visibility = View.GONE
+                displayView?.pause()
                 return START_STICKY
             }
             ACTION_SHOW_OVERLAY, null -> {
@@ -98,14 +115,16 @@ class HanglyOverlayService : Service() {
                     return START_STICKY
                 }
 
-                if (overlayView == null) {
+                if (displayView == null) {
                     showOverlayWindow(charmBytes, ropeColor, ropeLength, charmRadius)
                 } else {
-                    overlayView?.updateConfig(charmBytes, ropeColor, ropeLength, charmRadius)
-                    overlayView?.visibility = View.VISIBLE
-                    overlayView?.requestLayout()
-                    overlayView?.resume()
-                    overlayView?.wake()
+                    displayView?.updateConfig(charmBytes, ropeColor, ropeLength, charmRadius)
+                    displayView?.visibility = View.VISIBLE
+                    anchorTouchView?.visibility = View.VISIBLE
+                    charmTouchView?.visibility = View.VISIBLE
+                    displayView?.requestLayout()
+                    displayView?.resume()
+                    displayView?.wake()
                 }
                 return START_STICKY
             }
@@ -162,8 +181,8 @@ class HanglyOverlayService : Service() {
         screenReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
-                    Intent.ACTION_SCREEN_OFF -> overlayView?.pause()
-                    Intent.ACTION_SCREEN_ON -> overlayView?.resume()
+                    Intent.ACTION_SCREEN_OFF -> displayView?.pause()
+                    Intent.ACTION_SCREEN_ON -> displayView?.resume()
                 }
             }
         }
@@ -184,14 +203,56 @@ class HanglyOverlayService : Service() {
             return
         }
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val density = resources.displayMetrics.density
+        val metrics = resources.displayMetrics
+        val density = metrics.density
+        val screenWidth = metrics.widthPixels.toFloat()
 
-        val width = (140 * density).toInt()
-        val height = (max(180f, ropeLength + charmRadius * 2f + 40f) * density).toInt().coerceAtMost((260 * density).toInt())
+        // Read saved anchor position if previously customized by user
+        val prefs = getSharedPreferences("hangly_overlay_prefs", Context.MODE_PRIVATE)
+        val savedRatio = prefs.getFloat("anchor_x_ratio", 0.5f)
+        val savedYDp = prefs.getFloat("anchor_y_dp", 16f)
 
-        val layoutParams = WindowManager.LayoutParams(
-            width,
-            height,
+        anchorX = (screenWidth * savedRatio).coerceIn(36f * density, screenWidth - 36f * density)
+        anchorY = (savedYDp * density).coerceIn(8f * density, 80f * density)
+
+        // 1. FULL-SCREEN DISPLAY OVERLAY VIEW
+        // Covers the entire screen without any boundary clipping.
+        // FLAG_NOT_TOUCHABLE ensures ALL touches pass cleanly to underlying apps.
+        val dParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            else
+                @Suppress("DEPRECATION")
+                WindowManager.LayoutParams.TYPE_PHONE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = 0
+            y = 0
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+        }
+        displayParams = dParams
+
+        val dView = DisplayOverlayView(this, this)
+        dView.updateConfig(charmBytes, ropeColor, ropeLength, charmRadius)
+        displayView = dView
+
+        // 2. TOP ANCHOR TOUCH HANDLE
+        // A generous 88dp x 52dp touch target placed over the top anchor knot.
+        // User can drag it horizontally across the top to move the anchor anywhere!
+        val anchorW = (88 * density).toInt()
+        val anchorH = (52 * density).toInt()
+        val aParams = WindowManager.LayoutParams(
+            anchorW,
+            anchorH,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             else
@@ -202,24 +263,95 @@ class HanglyOverlayService : Service() {
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            x = 0
-            y = 0
+            gravity = Gravity.TOP or Gravity.START
+            x = (anchorX - anchorW / 2f).toInt()
+            y = (anchorY - anchorH / 2f).toInt().coerceAtLeast(0)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
             }
         }
+        anchorTouchParams = aParams
+        val aView = AnchorTouchView(this, this)
+        anchorTouchView = aView
 
-        val view = OverlayView(this, layoutParams, windowManager)
-        view.updateConfig(charmBytes, ropeColor, ropeLength, charmRadius)
-        overlayView = view
+        // 3. CHARM TOUCH TARGET
+        // Sits right on top of the hanging charm.
+        // User can grab and fling the charm directly.
+        val charmTouchSize = max(64f * density, charmRadius * density * 2.4f).toInt()
+        val cParams = WindowManager.LayoutParams(
+            charmTouchSize,
+            charmTouchSize,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            else
+                @Suppress("DEPRECATION")
+                WindowManager.LayoutParams.TYPE_PHONE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            val initialCharmY = anchorY + (ropeLength * density)
+            x = (anchorX - charmTouchSize / 2f).toInt()
+            y = (initialCharmY - charmTouchSize / 2f).toInt()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+        }
+        charmTouchParams = cParams
+        val cView = CharmTouchView(this, this)
+        charmTouchView = cView
 
         try {
-            windowManager?.addView(view, layoutParams)
-            view.visibility = View.VISIBLE
-            view.wake()
+            windowManager?.addView(dView, dParams)
+            windowManager?.addView(aView, aParams)
+            windowManager?.addView(cView, cParams)
+
+            dView.visibility = View.VISIBLE
+            aView.visibility = View.VISIBLE
+            cView.visibility = View.VISIBLE
+            dView.wake()
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    fun updateAnchor(newX: Float, newY: Float) {
+        anchorX = newX
+        anchorY = newY
+        displayView?.setAnchor(newX, newY)
+
+        anchorTouchParams?.let { params ->
+            params.x = (newX - params.width / 2f).toInt()
+            params.y = (newY - params.height / 2f).toInt().coerceAtLeast(0)
+            try {
+                windowManager?.updateViewLayout(anchorTouchView, params)
+            } catch (_: Exception) {}
+        }
+    }
+
+    fun saveAnchorPosition() {
+        val screenW = resources.displayMetrics.widthPixels.toFloat()
+        val density = resources.displayMetrics.density
+        getSharedPreferences("hangly_overlay_prefs", Context.MODE_PRIVATE)
+            .edit()
+            .putFloat("anchor_x_ratio", (anchorX / screenW).coerceIn(0.05f, 0.95f))
+            .putFloat("anchor_y_dp", anchorY / density)
+            .apply()
+    }
+
+    fun updateCharmTouchLayout(charmX: Float, charmY: Float) {
+        charmTouchParams?.let { params ->
+            val targetX = (charmX - params.width / 2f).toInt()
+            val targetY = (charmY - params.height / 2f).toInt()
+            if (abs(params.x - targetX) > 2 || abs(params.y - targetY) > 2) {
+                params.x = targetX
+                params.y = targetY
+                try {
+                    windowManager?.updateViewLayout(charmTouchView, params)
+                } catch (_: Exception) {}
+            }
         }
     }
 
@@ -230,20 +362,34 @@ class HanglyOverlayService : Service() {
                 unregisterReceiver(it)
             } catch (_: Exception) {}
         }
-        overlayView?.let {
+        displayView?.let {
             it.destroy()
             try {
                 windowManager?.removeView(it)
             } catch (_: Exception) {}
         }
-        overlayView = null
+        anchorTouchView?.let {
+            try {
+                windowManager?.removeView(it)
+            } catch (_: Exception) {}
+        }
+        charmTouchView?.let {
+            try {
+                windowManager?.removeView(it)
+            } catch (_: Exception) {}
+        }
+        displayView = null
+        anchorTouchView = null
+        charmTouchView = null
         super.onDestroy()
     }
 
-    class OverlayView(
+    // =========================================================================
+    // 1. DISPLAY OVERLAY VIEW (Full Screen, Non-Touchable, Draws All Art)
+    // =========================================================================
+    class DisplayOverlayView(
         context: Context,
-        private val params: WindowManager.LayoutParams,
-        private val wm: WindowManager?
+        private val service: HanglyOverlayService
     ) : View(context) {
 
         private val density = resources.displayMetrics.density
@@ -268,19 +414,10 @@ class HanglyOverlayService : Service() {
         private var sleepFrames = 0
         private val framesBeforeSleep = 60
 
-        private var isDraggingCharm = false
-        private var isDraggingAnchor = false
-
-        private var initialWindowX = 0
-        private var initialWindowY = 0
-        private var initialTouchRawX = 0f
-        private var initialTouchRawY = 0f
-
-        private var lastTouchX = 0f
-        private var lastTouchY = 0f
-        private var touchVx = 0f
-        private var touchVy = 0f
-        private var lastTouchTime = 0L
+        var isAnchorPressed = false
+            private set
+        var isDraggingCharm = false
+            private set
 
         private val ropePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
@@ -293,8 +430,15 @@ class HanglyOverlayService : Service() {
             style = Paint.Style.FILL
         }
 
-        private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        private val knotCorePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
+            color = Color.WHITE
+        }
+
+        private val anchorPressedPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 3f * density
+            color = Color.argb(140, 255, 255, 255)
         }
 
         private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
@@ -315,14 +459,17 @@ class HanglyOverlayService : Service() {
 
         private val ropePath = Path()
 
-        private val anchorX: Float get() = width.takeIf { it > 0 }?.div(2f) ?: (70f * density)
-        private val anchorY: Float get() = 12f * density
+        val anchorX: Float get() = service.anchorX
+        val anchorY: Float get() = service.anchorY
 
         private val frameCallback = object : Choreographer.FrameCallback {
             override fun doFrame(frameTimeNanos: Long) {
                 if (isSuspended) return
                 stepSimulation()
                 invalidate()
+                if (points.isNotEmpty()) {
+                    service.updateCharmTouchLayout(points.last().x, points.last().y)
+                }
                 if (!isSleeping) {
                     Choreographer.getInstance().postFrameCallback(this)
                 }
@@ -337,7 +484,6 @@ class HanglyOverlayService : Service() {
         override fun onAttachedToWindow() {
             super.onAttachedToWindow()
             isSuspended = false
-            initPoints()
             wake()
         }
 
@@ -370,7 +516,6 @@ class HanglyOverlayService : Service() {
             }
             ropePaint.color = ropeColorInt
             knotPaint.color = ropeColorInt
-            glowPaint.color = Color.argb(45, Color.red(ropeColorInt), Color.green(ropeColorInt), Color.blue(ropeColorInt))
 
             ropeLengthPx = ropeLength * density
             charmRadiusPx = charmRadius * density
@@ -393,7 +538,7 @@ class HanglyOverlayService : Service() {
             val curAnchorY = anchorY
             val segLen = ropeLengthPx / segmentCount
 
-            // Pinned anchor at top center
+            // Pinned anchor at top
             points.add(Point(curAnchorX, curAnchorY, curAnchorX, curAnchorY, isPinned = true))
 
             for (i in 1..segmentCount) {
@@ -408,10 +553,70 @@ class HanglyOverlayService : Service() {
 
         override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
             super.onSizeChanged(w, h, oldw, oldh)
-            if (w > 0 && h > 0) {
+            if (w > 0 && h > 0 && points.isEmpty()) {
                 initPoints()
                 wake()
             }
+        }
+
+        fun setAnchor(x: Float, y: Float) {
+            if (points.isNotEmpty()) {
+                val dx = x - points[0].x
+                val dy = y - points[0].y
+                points[0].x = x
+                points[0].y = y
+                points[0].oldX = x
+                points[0].oldY = y
+
+                // Nudge points with physical inertia so rope responds dynamically to anchor drag
+                for (i in 1 until points.size) {
+                    val factor = 1f - (i.toFloat() / points.size)
+                    points[i].oldX -= dx * factor * 0.45f
+                    points[i].oldY -= dy * factor * 0.45f
+                }
+            }
+            wake()
+        }
+
+        fun setAnchorPressed(pressed: Boolean) {
+            isAnchorPressed = pressed
+            invalidate()
+        }
+
+        fun onCharmDragStart() {
+            isDraggingCharm = true
+            wake()
+        }
+
+        fun onCharmDrag(rawX: Float, rawY: Float) {
+            if (points.isNotEmpty()) {
+                val last = points.last()
+                last.x = rawX
+                last.y = rawY
+            }
+            wake()
+        }
+
+        fun onCharmFling(vx: Float, vy: Float) {
+            isDraggingCharm = false
+            if (points.isNotEmpty()) {
+                val last = points.last()
+                val maxV = 1800f * density
+                val clampedVx = vx.coerceIn(-maxV, maxV)
+                val clampedVy = vy.coerceIn(-maxV, maxV)
+                last.oldX = last.x - (clampedVx * 0.016f)
+                last.oldY = last.y - (clampedVy * 0.016f)
+            }
+            wake()
+        }
+
+        fun onCharmTap() {
+            isDraggingCharm = false
+            if (points.isNotEmpty()) {
+                val last = points.last()
+                last.oldX -= 30f * density
+            }
+            wake()
         }
 
         fun wake() {
@@ -501,14 +706,14 @@ class HanglyOverlayService : Service() {
             }
 
             // 3. Energy / Sleep Check
-            if (!isDraggingCharm && !isDraggingAnchor) {
+            if (!isDraggingCharm && !service.isAnchorDragging) {
                 var totalMotion = 0f
                 for (i in 1 until points.size) {
                     val p = points[i]
                     totalMotion += hypot(p.x - p.oldX, p.y - p.oldY)
                 }
 
-                if (totalMotion < (0.4f * density)) {
+                if (totalMotion < (0.35f * density)) {
                     sleepFrames++
                     if (sleepFrames > framesBeforeSleep) {
                         isSleeping = true
@@ -516,6 +721,8 @@ class HanglyOverlayService : Service() {
                 } else {
                     sleepFrames = 0
                 }
+            } else {
+                sleepFrames = 0
             }
         }
 
@@ -526,7 +733,7 @@ class HanglyOverlayService : Service() {
             val curAnchorX = anchorX
             val curAnchorY = anchorY
 
-            // Draw Rope Path
+            // 1. Draw Rope Path
             ropePath.reset()
             ropePath.moveTo(points[0].x, points[0].y)
             for (i in 1 until points.size) {
@@ -540,18 +747,27 @@ class HanglyOverlayService : Service() {
             ropePath.lineTo(last.x, last.y)
             canvas.drawPath(ropePath, ropePaint)
 
-            // Draw Top Anchor Knot / Ring
-            canvas.drawCircle(curAnchorX, curAnchorY, 5.5f * density, knotPaint)
+            // 2. Draw Top Anchor Knot & Draggable Grip Indicator
+            if (isAnchorPressed) {
+                canvas.drawCircle(curAnchorX, curAnchorY, 14f * density, anchorPressedPaint)
+            }
+            canvas.drawCircle(curAnchorX, curAnchorY, 6.5f * density, knotPaint)
+            canvas.drawCircle(curAnchorX, curAnchorY, 2.5f * density, knotCorePaint)
 
-            // Calculate Charm Angle from last rope segment
+            // Micro-dots grip hint above the anchor knot to indicate movable handle
+            val dotSpacing = 4.5f * density
+            val dotY = curAnchorY - (9f * density)
+            canvas.drawCircle(curAnchorX - dotSpacing, dotY, 1.4f * density, knotPaint)
+            canvas.drawCircle(curAnchorX, dotY, 1.4f * density, knotPaint)
+            canvas.drawCircle(curAnchorX + dotSpacing, dotY, 1.4f * density, knotPaint)
+
+            // 3. Calculate Charm Angle from last rope segment
             val secondLast = points[points.size - 2]
             val angleRad = atan2(last.y - secondLast.y, last.x - secondLast.x) - (Math.PI / 2.0).toFloat()
             val angleDeg = Math.toDegrees(angleRad.toDouble()).toFloat()
 
-            // Draw Halo Glow
-            canvas.drawCircle(last.x, last.y, charmRadiusPx * 1.35f, glowPaint)
-
-            // Draw Charm Artwork (Bitmap or Fallback)
+            // 4. Draw Charm Artwork (Bitmap or Fallback)
+            // No glow circle smudge: completely crisp and clean rendering
             val bmp = charmBitmap
             if (bmp != null && !bmp.isRecycled) {
                 canvas.save()
@@ -567,87 +783,116 @@ class HanglyOverlayService : Service() {
                 canvas.drawCircle(last.x, last.y, charmRadiusPx * 0.35f, fallbackDotPaint)
             }
         }
+    }
+
+    // =========================================================================
+    // 2. ANCHOR TOUCH VIEW (Draggable Handle on Top Edge)
+    // =========================================================================
+    class AnchorTouchView(
+        context: Context,
+        private val service: HanglyOverlayService
+    ) : View(context) {
+
+        private val density = resources.displayMetrics.density
+        private var touchStartX = 0f
+        private var touchStartY = 0f
+        private var initAnchorX = 0f
+        private var initAnchorY = 0f
+
+        init {
+            setBackgroundColor(Color.TRANSPARENT)
+        }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
-            val curAnchorX = anchorX
-            val curAnchorY = anchorY
-            val last = if (points.isNotEmpty()) points.last() else null
-
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    // Check if touching top knot to move window
-                    val distToAnchor = hypot(event.x - curAnchorX, event.y - curAnchorY)
-                    if (distToAnchor < (32f * density) || event.y < (24f * density)) {
-                        isDraggingAnchor = true
-                        initialWindowX = params.x
-                        initialWindowY = params.y
-                        initialTouchRawX = event.rawX
-                        initialTouchRawY = event.rawY
-                        return true
-                    }
-
-                    // Check if touching charm to interact with rope physics
-                    if (last != null) {
-                        val distToCharm = hypot(event.x - last.x, event.y - last.y)
-                        if (distToCharm < (charmRadiusPx * 2.2f)) {
-                            isDraggingCharm = true
-                            lastTouchX = event.x
-                            lastTouchY = event.y
-                            lastTouchTime = System.currentTimeMillis()
-                            touchVx = 0f
-                            touchVy = 0f
-                            wake()
-                            return true
-                        }
-                    }
-                    return false
+                    service.isAnchorDragging = true
+                    touchStartX = event.rawX
+                    touchStartY = event.rawY
+                    initAnchorX = service.anchorX
+                    initAnchorY = service.anchorY
+                    service.displayView?.setAnchorPressed(true)
+                    return true
                 }
-
                 MotionEvent.ACTION_MOVE -> {
-                    if (isDraggingAnchor) {
-                        params.x = initialWindowX + (event.rawX - initialTouchRawX).toInt()
-                        params.y = initialWindowY + (event.rawY - initialTouchRawY).toInt()
-                        wm?.updateViewLayout(this, params)
+                    if (service.isAnchorDragging) {
+                        val dx = event.rawX - touchStartX
+                        val dy = event.rawY - touchStartY
+                        val screenW = resources.displayMetrics.widthPixels.toFloat()
+                        val newX = (initAnchorX + dx).coerceIn(36f * density, screenW - 36f * density)
+                        val newY = (initAnchorY + dy).coerceIn(8f * density, 80f * density)
+                        service.updateAnchor(newX, newY)
                         return true
                     }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    if (service.isAnchorDragging) {
+                        service.isAnchorDragging = false
+                        service.displayView?.setAnchorPressed(false)
+                        service.saveAnchorPosition()
+                        return true
+                    }
+                }
+            }
+            return super.onTouchEvent(event)
+        }
+    }
 
-                    if (isDraggingCharm && last != null) {
+    // =========================================================================
+    // 3. CHARM TOUCH VIEW (Interactive Charm Target)
+    // =========================================================================
+    class CharmTouchView(
+        context: Context,
+        private val service: HanglyOverlayService
+    ) : View(context) {
+
+        private var isDragging = false
+        private var lastTouchX = 0f
+        private var lastTouchY = 0f
+        private var touchVx = 0f
+        private var touchVy = 0f
+        private var lastTouchTime = 0L
+
+        init {
+            setBackgroundColor(Color.TRANSPARENT)
+        }
+
+        override fun onTouchEvent(event: MotionEvent): Boolean {
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    isDragging = true
+                    lastTouchX = event.rawX
+                    lastTouchY = event.rawY
+                    lastTouchTime = System.currentTimeMillis()
+                    touchVx = 0f
+                    touchVy = 0f
+                    service.displayView?.onCharmDragStart()
+                    return true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (isDragging) {
                         val now = System.currentTimeMillis()
                         val dtSec = max((now - lastTouchTime) / 1000f, 0.001f)
-                        touchVx = (event.x - lastTouchX) / dtSec
-                        touchVy = (event.y - lastTouchY) / dtSec
-                        lastTouchX = event.x
-                        lastTouchY = event.y
+                        touchVx = (event.rawX - lastTouchX) / dtSec
+                        touchVy = (event.rawY - lastTouchY) / dtSec
+                        lastTouchX = event.rawX
+                        lastTouchY = event.rawY
                         lastTouchTime = now
 
-                        last.x = event.x
-                        last.y = event.y
-                        wake()
+                        service.displayView?.onCharmDrag(event.rawX, event.rawY)
+                        service.updateCharmTouchLayout(event.rawX, event.rawY)
                         return true
                     }
                 }
-
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    if (isDraggingAnchor) {
-                        isDraggingAnchor = false
-                        return true
-                    }
-
-                    if (isDraggingCharm && last != null) {
-                        isDraggingCharm = false
-                        // Fling impulse with velocity clamping
+                    if (isDragging) {
+                        isDragging = false
                         val speed = hypot(touchVx, touchVy)
                         if (speed > 50f) {
-                            val maxV = 1800f * density
-                            val clampedVx = touchVx.coerceIn(-maxV, maxV)
-                            val clampedVy = touchVy.coerceIn(-maxV, maxV)
-                            last.oldX = last.x - (clampedVx * 0.016f)
-                            last.oldY = last.y - (clampedVy * 0.016f)
+                            service.displayView?.onCharmFling(touchVx, touchVy)
                         } else {
-                            // Gentle tap push
-                            last.oldX -= 30f * density
+                            service.displayView?.onCharmTap()
                         }
-                        wake()
                         return true
                     }
                 }

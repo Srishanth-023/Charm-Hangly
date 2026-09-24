@@ -78,6 +78,11 @@ class _HanglyScenePageState extends State<HanglyScenePage>
     );
 
     _ticker = createTicker(_onTick);
+
+    // Hide any overlay that may have been left running from a previous session
+    // (e.g. app crash, system restart). This prevents the two-charms bug.
+    _hanglyChannel.stopOverlayService();
+
     _loadSettingsAndStart();
   }
 
@@ -139,16 +144,19 @@ class _HanglyScenePageState extends State<HanglyScenePage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.hidden) {
-      // User minimized the app: launch native floating charm overlay across all apps
+    // Only show the overlay when the app is TRULY in the background (paused).
+    // AppLifecycleState.inactive fires while the app is still partially visible
+    // (e.g. pulling down the notification shade, swiping to app-switcher).
+    // AppLifecycleState.hidden fires on Android 14 just before paused.
+    // Triggering the overlay on those states causes the two-charms bug.
+    if (state == AppLifecycleState.paused) {
       if (_settings.backgroundOverlayEnabled && !_isOverlayActive) {
         _isOverlayActive = true;
         _launchBackgroundOverlay();
       }
     } else if (state == AppLifecycleState.resumed) {
-      // User reopened Hangly: stop the floating overlay to avoid clashing with the in-app view
+      // ALWAYS hide the overlay when the user returns to Hangly regardless of
+      // _isOverlayActive, in case the service was running from a previous session.
       _isOverlayActive = false;
       _hanglyChannel.stopOverlayService();
       _refreshPermissionState();

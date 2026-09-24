@@ -11,6 +11,29 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "hangly/overlay"
 
+    /**
+     * When Hangly comes to the foreground (Activity.onResume), immediately hide
+     * any system overlay so it never overlaps with the in-app charm canvas.
+     * This is the native-side guard against the "two charms" bug.
+     */
+    override fun onResume() {
+        super.onResume()
+        val hideIntent = Intent(this, HanglyOverlayService::class.java).apply {
+            action = HanglyOverlayService.ACTION_HIDE_OVERLAY
+        }
+        try { startService(hideIntent) } catch (_: Exception) {}
+    }
+
+    /**
+     * When Hangly goes to the background (Activity.onPause), the Flutter
+     * lifecycle will separately fire didChangeAppLifecycleState(paused).
+     * We don't start the overlay here — that's Flutter's job — so the
+     * charm parameters (color, bitmap, size) are properly forwarded.
+     */
+    override fun onPause() {
+        super.onPause()
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
