@@ -115,7 +115,9 @@ class _HanglyScenePageState extends State<HanglyScenePage>
       _initialized = true;
 
       _precacheCurrentCharm();
-      _confettiController.play();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _confettiController.play();
+      });
 
       if (!hasPerm && !_dismissedPermissionBanner) {
         Future.delayed(const Duration(milliseconds: 700), () {
@@ -664,6 +666,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                       _simulation.push(1.0);
                       _haptics.lightImpact();
                       _wakeTicker();
+                      _confettiController.play();
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -717,24 +720,24 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                 ),
               ),
 
-              // 7. Confetti Popper (Falls from top center)
+              // 7. Confetti Popper (Explodes from center)
               Align(
-                alignment: Alignment.topCenter,
+                alignment: Alignment.center,
                 child: ConfettiWidget(
                   confettiController: _confettiController,
-                  blastDirection: math.pi / 2, // Straight down
-                  maxBlastForce: 25, // Fall speed
+                  blastDirection: -math.pi / 2, // Shoot UP
+                  maxBlastForce: 30, // High blast force to shoot high
                   minBlastForce: 10,
-                  emissionFrequency: 0.05,
-                  numberOfParticles: 25,
-                  gravity: 0.2,
+                  emissionFrequency: 0.1, // More particles
+                  numberOfParticles: 35,
+                  gravity: 0.15, // Float down gently
                   colors: const [
-                    Colors.red,
-                    Colors.blue,
-                    Colors.green,
-                    Colors.yellow,
-                    Colors.purple,
-                    Colors.orange,
+                    Colors.redAccent,
+                    Colors.blueAccent,
+                    Colors.greenAccent,
+                    Colors.yellowAccent,
+                    Colors.purpleAccent,
+                    Colors.orangeAccent,
                   ],
                 ),
               ),
