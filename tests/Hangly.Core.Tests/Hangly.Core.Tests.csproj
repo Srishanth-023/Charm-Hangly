@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../src/Hangly.Core/Hangly.Core.csproj" />
+    <ProjectReference Include="../../src/desktop/Hangly.Core/Hangly.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

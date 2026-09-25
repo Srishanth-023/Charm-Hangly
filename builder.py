@@ -23,9 +23,9 @@ REPO_ROOT = Path(__file__).resolve().parent
 SRC_DIR = REPO_ROOT / "src"
 TESTS_DIR = REPO_ROOT / "tests"
 BUILD_DIR = REPO_ROOT / "build"
-MOBILE_DIR = REPO_ROOT / "mobile"
+MOBILE_DIR = SRC_DIR / "mobile"
 MOBILE_BUILD_DIR = BUILD_DIR / "mobile"
-APP_CSPROJ = SRC_DIR / "Hangly.App" / "Hangly.App.csproj"
+APP_CSPROJ = SRC_DIR / "desktop" / "Hangly.App" / "Hangly.App.csproj"
 TEST_CSPROJ = TESTS_DIR / "Hangly.Core.Tests" / "Hangly.Core.Tests.csproj"
 
 TARGET_MAP = {

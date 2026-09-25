@@ -1,8 +1,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hangly.Core", "src\Hangly.Core\Hangly.Core.csproj", "{A1000000-0000-0000-0000-000000000001}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hangly.Core", "src\desktop\Hangly.Core\Hangly.Core.csproj", "{A1000000-0000-0000-0000-000000000001}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hangly.App", "src\Hangly.App\Hangly.App.csproj", "{A1000000-0000-0000-0000-000000000002}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hangly.App", "src\desktop\Hangly.App\Hangly.App.csproj", "{A1000000-0000-0000-0000-000000000002}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hangly.Core.Tests", "tests\Hangly.Core.Tests\Hangly.Core.Tests.csproj", "{A1000000-0000-0000-0000-000000000003}"
 EndProject
