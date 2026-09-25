@@ -244,7 +244,7 @@ def find_vpk_tool() -> Path | None:
     return None
 
 
-def publish_target(dotnet_exe: Path, arch: str, config: str) -> bool:
+def publish_target(dotnet_exe: Path, arch: str, config: str, version: str) -> bool:
     """Publishes a self-contained executable and installer for the given architecture."""
     if arch not in TARGET_MAP:
         print(f"[builder] Error: Unsupported architecture '{arch}'. Supported: {list(TARGET_MAP.keys())}")
@@ -309,7 +309,7 @@ def publish_target(dotnet_exe: Path, arch: str, config: str) -> bool:
             str(vpk_tool),
             "pack",
             "-u", "CharmHangly",
-            "-v", "1.0.0",
+            "-v", version,
             "--packTitle", "Charm Hangly",
             "--packAuthors", "sharancreatedthis",
             "-p", str(portable_dir),
@@ -328,13 +328,13 @@ def publish_target(dotnet_exe: Path, arch: str, config: str) -> bool:
             setup_candidates = list(packages_dir.glob("*Setup.exe"))
             if setup_candidates:
                 installer_exe = setup_candidates[0]
-                dest_installer = output_dir / f"CharmHangly-Setup-{arch}.exe"
+                dest_installer = output_dir / f"CharmHangly-Setup-{arch}-v{version}.exe"
                 shutil.copy2(installer_exe, dest_installer)
                 print(f"[builder] Desktop Application Installer ready: {dest_installer}")
             portable_zip_candidates = list(packages_dir.glob("*Portable.zip"))
             if portable_zip_candidates:
                 portable_zip = portable_zip_candidates[0]
-                dest_portable_zip = output_dir / f"CharmHangly-Portable-{arch}.zip"
+                dest_portable_zip = output_dir / f"CharmHangly-Portable-{arch}-v{version}.zip"
                 shutil.copy2(portable_zip, dest_portable_zip)
                 print(f"[builder] Portable package ready: {dest_portable_zip}")
         else:
@@ -364,15 +364,13 @@ def collect_github_releases():
         if not output_dir.is_dir():
             continue
 
-        # 1. Desktop Application Installer (e.g. CharmHangly-Setup-x64.exe)
-        setup_exe = output_dir / f"CharmHangly-Setup-{arch}.exe"
-        if setup_exe.is_file():
+        # 1. Desktop Application Installer
+        for setup_exe in output_dir.glob(f"CharmHangly-Setup-{arch}-*.exe"):
             shutil.copy2(setup_exe, dist_dir / setup_exe.name)
             count += 1
 
-        # 2. Standalone Portable Zip (e.g. CharmHangly-Portable-x64.zip)
-        portable_zip = output_dir / f"CharmHangly-Portable-{arch}.zip"
-        if portable_zip.is_file():
+        # 2. Standalone Portable Zip
+        for portable_zip in output_dir.glob(f"CharmHangly-Portable-{arch}-*.zip"):
             shutil.copy2(portable_zip, dist_dir / portable_zip.name)
             count += 1
 
@@ -384,7 +382,63 @@ def collect_github_releases():
                     shutil.copy2(p, dist_dir / p.name)
                     count += 1
 
+    # 4. Mobile APKs & AppBundles
+    mobile_dir = BUILD_DIR / "mobile"
+    if mobile_dir.is_dir():
+        for ext in ["*.apk", "*.aab"]:
+            for f in mobile_dir.rglob(ext):
+                shutil.copy2(f, dist_dir / f.name)
+                count += 1
+
     print(f"[builder] Collected {count} GitHub Release assets with unique filenames in: {dist_dir}")
+
+
+def update_desktop_version(version: str):
+    """Updates the version number in csproj."""
+    import re
+    print(f"\n[builder] Updating Windows project files to version {version}...")
+    if APP_CSPROJ.is_file():
+        content = APP_CSPROJ.read_text(encoding="utf-8")
+        content = re.sub(r"<Version>.*?</Version>", f"<Version>{version}</Version>", content)
+        content = re.sub(r"<FileVersion>.*?</FileVersion>", f"<FileVersion>{version}</FileVersion>", content)
+        content = re.sub(r"<AssemblyVersion>.*?</AssemblyVersion>", f"<AssemblyVersion>{version}</AssemblyVersion>", content)
+        APP_CSPROJ.write_text(content, encoding="utf-8")
+        print(f"[builder] Updated {APP_CSPROJ.name}")
+
+def update_mobile_version(version: str):
+    """Updates the version number in pubspec.yaml."""
+    import re
+    print(f"\n[builder] Updating Mobile project files to version {version}...")
+    pubspec = MOBILE_DIR / "pubspec.yaml"
+    if pubspec.is_file():
+        content = pubspec.read_text(encoding="utf-8")
+        content = re.sub(r"^version:\s*.*", f"version: {version}+1", content, flags=re.MULTILINE)
+        pubspec.write_text(content, encoding="utf-8")
+        print(f"[builder] Updated pubspec.yaml")
+
+
+def archive_historical_release(desktop_version: str = None, mobile_version: str = None):
+    """Archives the generated build/github-release to a persistent releases/ folder."""
+    import datetime
+    
+    github_release_dir = BUILD_DIR / "github-release"
+    if not github_release_dir.is_dir():
+        return
+        
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    if desktop_version and mobile_version:
+        folder_name = f"desktop-v{desktop_version}_mobile-v{mobile_version}_{timestamp}"
+    elif desktop_version:
+        folder_name = f"desktop-v{desktop_version}_{timestamp}"
+    elif mobile_version:
+        folder_name = f"mobile-v{mobile_version}_{timestamp}"
+    else:
+        folder_name = f"build_{timestamp}"
+        
+    archive_dir = REPO_ROOT / "releases" / folder_name
+    
+    print(f"\n[builder] Archiving current release to a permanent folder: {archive_dir}")
+    shutil.copytree(github_release_dir, archive_dir)
 
 
 def check_mobile_prerequisites() -> Path:
@@ -424,7 +478,7 @@ def run_mobile_tests(flutter_bin: Path) -> bool:
         return False
 
 
-def build_mobile(flutter_bin: Path, config: str = "Release") -> bool:
+def build_mobile(flutter_bin: Path, config: str = "Release", version: str = "1.0.0") -> bool:
     """Builds the Flutter Android APK and AppBundle and copies artifacts to build/mobile/."""
     print(f"\n[builder] Building Mobile Flutter Android Application ({config})...")
     if not MOBILE_DIR.is_dir():
@@ -452,7 +506,10 @@ def build_mobile(flutter_bin: Path, config: str = "Release") -> bool:
     apk_copied = 0
     if built_apk_dir.is_dir():
         for apk_file in built_apk_dir.glob("*.apk"):
-            dest = apk_out / apk_file.name
+            dest_name = apk_file.name.replace(".apk", f"-v{version}.apk")
+            if "app" in dest_name:
+                dest_name = dest_name.replace("app", "CharmHangly-Mobile")
+            dest = apk_out / dest_name
             shutil.copy2(apk_file, dest)
             size_mb = dest.stat().st_size / (1024 * 1024)
             print(f"[builder] Produced APK artifact: {dest} ({size_mb:.2f} MB)")
@@ -470,7 +527,10 @@ def build_mobile(flutter_bin: Path, config: str = "Release") -> bool:
             built_bundle_dir = MOBILE_DIR / "build" / "app" / "outputs" / "bundle" / "release"
             if built_bundle_dir.is_dir():
                 for aab_file in built_bundle_dir.glob("*.aab"):
-                    dest = bundle_out / aab_file.name
+                    dest_name = aab_file.name.replace(".aab", f"-v{version}.aab")
+                    if "app" in dest_name:
+                        dest_name = dest_name.replace("app", "CharmHangly-Mobile")
+                    dest = bundle_out / dest_name
                     shutil.copy2(aab_file, dest)
                     size_mb = dest.stat().st_size / (1024 * 1024)
                     print(f"[builder] Produced AppBundle artifact: {dest} ({size_mb:.2f} MB)")
@@ -568,8 +628,25 @@ def main():
         selected_target = args.arch
 
     # If no target specified, prompt the user
+    desktop_version = "1.0.0"
+    mobile_version = "1.0.0"
+    
     if selected_target is None and not (args.clean and not (args.test or args.publish)):
         selected_target = prompt_target_interactive()
+        print("=" * 60)
+        
+        if selected_target in ["all", "x64", "arm64"]:
+            v = input("Enter new DESKTOP version number (e.g. 1.2.0) or press Enter to skip: ").strip()
+            if v:
+                desktop_version = v
+                update_desktop_version(desktop_version)
+                
+        if selected_target in ["all", "mobile"]:
+            v = input("Enter new MOBILE version number (e.g. 1.2.0) or press Enter to skip: ").strip()
+            if v:
+                mobile_version = v
+                update_mobile_version(mobile_version)
+                
     elif selected_target is None:
         # Default fallback for automated non-interactive runs
         selected_target = "x64"
@@ -589,7 +666,7 @@ def main():
             if not run_mobile_tests(flutter_bin):
                 sys.exit(1)
         if args.publish:
-            if not build_mobile(flutter_bin, args.configuration):
+            if not build_mobile(flutter_bin, args.configuration, mobile_version):
                 sys.exit(1)
         print("\n[builder] Mobile target completed successfully.")
         if selected_target == "mobile":
@@ -606,12 +683,12 @@ def main():
 
     if selected_target == "all":
         for arch in ["x64", "arm64"]:
-            ok = publish_target(dotnet_exe, arch, args.configuration)
+            ok = publish_target(dotnet_exe, arch, args.configuration, desktop_version)
             if not ok:
                 success = False
     elif args.publish:
         target_arch = selected_target if selected_target in ["x64", "arm64"] else "x64"
-        ok = publish_target(dotnet_exe, target_arch, args.configuration)
+        ok = publish_target(dotnet_exe, target_arch, args.configuration, desktop_version)
         if not ok:
             success = False
 
@@ -621,6 +698,10 @@ def main():
 
     if selected_target == "all" or args.publish:
         collect_github_releases()
+        archive_historical_release(
+            desktop_version if desktop_version != "1.0.0" else None,
+            mobile_version if mobile_version != "1.0.0" else None
+        )
 
     print("\n[builder] All tasks completed successfully.")
     sys.exit(0)
