@@ -38,6 +38,8 @@ dependencies:
   shared_preferences: ^2.5.5
   sensors_plus: ^7.1.0
   confetti: ^0.8.0
+  google_fonts: ^8.2.1
+  animated_text_kit: ^4.3.0
 
 dev_dependencies:
   flutter_test:

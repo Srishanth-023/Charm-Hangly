@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:confetti/confetti.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/models/charm.dart';
@@ -46,6 +47,8 @@ class _HanglyScenePageState extends State<HanglyScenePage>
 
   HanglySettings _settings = HanglySettings.defaults;
   Charm _currentCharm = CharmCatalog.defaultCharm;
+
+  int _pillTapCount = 0;
 
   Duration _lastTick = Duration.zero;
   Vec2 _lastPointerPos = Vec2.zero;
@@ -663,6 +666,9 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                 child: Center(
                   child: GestureDetector(
                     onTap: () {
+                      setState(() {
+                        _pillTapCount++;
+                      });
                       _simulation.push(1.0);
                       _haptics.lightImpact();
                       _wakeTicker();
@@ -765,6 +771,16 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                   ],
                 ),
               ),
+
+              // 9. Happy Birthday Animation (Appears on 2nd tap)
+              if (_pillTapCount >= 2)
+                const Positioned.fill(
+                  child: Center(
+                    child: IgnorePointer(
+                      child: WordByWordAnimation(text: "Happy Birthday Nene"),
+                    ),
+                  ),
+                ),
             ],
           );
         },
@@ -811,5 +827,75 @@ class _HanglyScenePageState extends State<HanglyScenePage>
     }
     path.close();
     return path;
+  }
+}
+
+class WordByWordAnimation extends StatefulWidget {
+  final String text;
+  const WordByWordAnimation({super.key, required this.text});
+
+  @override
+  State<WordByWordAnimation> createState() => _WordByWordAnimationState();
+}
+
+class _WordByWordAnimationState extends State<WordByWordAnimation> {
+  String _displayedText = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _typeText();
+  }
+
+  Future<void> _typeText() async {
+    for (int i = 0; i <= widget.text.length; i++) {
+      if (mounted) {
+        setState(() {
+          _displayedText = widget.text.substring(0, i);
+        });
+      }
+      // Smooth typing speed (faster for spaces to feel natural)
+      final char = i > 0 ? widget.text[i - 1] : '';
+      final delay = char == ' ' ? 200 : 120;
+      await Future.delayed(Duration(milliseconds: delay));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final words = _displayedText.split(' ');
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: List.generate(words.length, (index) {
+        // Style hierarchy matching the image
+        final isFirstWord = index == 0;
+        final isSecondWord = index == 1;
+
+        return Text(
+          words[index],
+          style: GoogleFonts.greatVibes(
+            fontSize: isFirstWord ? 64 : (isSecondWord ? 96 : 72),
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFFE91E63), // Glittery pink
+            height: 0.95,
+            shadows: [
+              Shadow(
+                color: Colors.pinkAccent.withAlpha(100),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+              const Shadow(
+                color: Colors.white,
+                blurRadius: 2,
+                offset: Offset(1, 1),
+              ),
+            ],
+          ),
+          textAlign: TextAlign.center,
+        );
+      }),
+    );
   }
 }
