@@ -297,7 +297,7 @@ class HanglyOverlayService : Service() {
 
         // Fixed to the top right (between center 0.50 and right edge 1.00 = 0.75 * screenWidth)
         anchorX = screenWidth * 0.75f
-        anchorY = 16f * density
+        anchorY = 0f // Purely hang from the edge of the screen
 
         // 1. FULL-SCREEN DISPLAY OVERLAY VIEW
         // Spans the full screen so rope and charm swing with zero clipping.

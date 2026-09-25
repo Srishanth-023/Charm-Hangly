@@ -55,7 +55,7 @@ class RopeConfiguration {
       (charmUnit > 0 ? charmUnit : totalLength) * charmSizeScale;
 
   Vec2 anchor(double width, double height) =>
-      anchorHeight > 0
+      anchorHeight >= 0
           ? Vec2(width * anchorXRatio, anchorHeight)
           : Vec2(width * anchorXRatio, height * RopeLayout.anchorFraction);
 
