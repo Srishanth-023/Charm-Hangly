@@ -270,23 +270,6 @@ class _SettingsPageState extends State<SettingsPage> {
             label: const Text('Reset to Defaults'),
             onPressed: _resetDefaults,
           ),
-          
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            icon: const Icon(Icons.exit_to_app),
-            label: const Text('Close Application Entirely', style: TextStyle(fontWeight: FontWeight.bold)),
-            onPressed: () async {
-              BackgroundServiceManager.isExiting = true;
-              await _backgroundManager.killOverlay();
-              SystemNavigator.pop();
-            },
-          ),
 
           const SizedBox(height: 32),
           _buildCard([

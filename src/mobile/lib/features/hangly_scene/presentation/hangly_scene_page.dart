@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/services.dart';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -678,6 +678,21 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                       ),
                     ),
                   ),
+                ),
+              ),
+
+              // 6. Quit button (Bottom right)
+              Positioned(
+                bottom: MediaQuery.of(context).padding.bottom + 24,
+                right: 16,
+                child: _buildIconButton(
+                  icon: Icons.power_settings_new,
+                  tooltip: 'Close Application Entirely',
+                  onPressed: () {
+                    BackgroundServiceManager.isExiting = true;
+                    _hanglyChannel.killOverlayService();
+                    SystemNavigator.pop();
+                  },
                 ),
               ),
             ],
