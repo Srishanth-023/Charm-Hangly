@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/models/rope_style.dart';
@@ -237,6 +238,24 @@ class _SettingsPageState extends State<SettingsPage> {
               value: _settings.backgroundOverlayEnabled,
               onChanged: _handleOverlayToggle,
             ),
+            const Divider(color: HanglyTheme.border, height: 1),
+            ListTile(
+              leading: const Icon(Icons.power_settings_new, color: Colors.redAccent),
+              title: const Text('Kill Hangly Overlay', style: TextStyle(color: Colors.redAccent)),
+              subtitle: const Text('Completely stops the background service', style: TextStyle(color: HanglyTheme.textSecondary, fontSize: 12)),
+              onTap: () async {
+                await _backgroundManager.killOverlay();
+                _save(_settings.copyWith(backgroundOverlayEnabled: false));
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Hangly overlay background service killed.', style: TextStyle(color: HanglyTheme.textPrimary)),
+                      backgroundColor: HanglyTheme.surfaceElevated,
+                    ),
+                  );
+                }
+              },
+            ),
           ]),
 
           const SizedBox(height: 24),
@@ -250,6 +269,23 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: const Icon(Icons.restore),
             label: const Text('Reset to Defaults'),
             onPressed: _resetDefaults,
+          ),
+          
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.exit_to_app),
+            label: const Text('Close Application Entirely', style: TextStyle(fontWeight: FontWeight.bold)),
+            onPressed: () async {
+              BackgroundServiceManager.isExiting = true;
+              await _backgroundManager.killOverlay();
+              SystemNavigator.pop();
+            },
           ),
 
           const SizedBox(height: 32),

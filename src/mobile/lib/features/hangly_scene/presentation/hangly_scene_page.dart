@@ -13,6 +13,7 @@ import '../../../core/models/settings.dart';
 import '../../../core/persistence/settings_storage.dart';
 import '../../../core/platform/hangly_channel.dart';
 import '../../../core/utils/charm_rasterizer.dart';
+import '../../../services/background_service/background_service_manager.dart';
 import '../../../services/haptics/haptics_service.dart';
 import '../../../services/sensors/motion_sensor_service.dart';
 import '../physics/rope_simulation.dart';
@@ -154,7 +155,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
     // AppLifecycleState.hidden fires on Android 14 just before paused.
     // Triggering the overlay on those states causes the two-charms bug.
     if (state == AppLifecycleState.paused) {
-      if (_settings.backgroundOverlayEnabled && !_isOverlayActive) {
+      if (_settings.backgroundOverlayEnabled && !_isOverlayActive && !BackgroundServiceManager.isExiting) {
         _isOverlayActive = true;
         _launchBackgroundOverlay();
       }

@@ -110,6 +110,16 @@ class MainActivity : FlutterActivity() {
                     result.success(true)
                 }
 
+                "killOverlayService" -> {
+                    val serviceIntent = Intent(this, HanglyOverlayService::class.java).apply {
+                        action = HanglyOverlayService.ACTION_STOP_OVERLAY
+                    }
+                    try {
+                        startService(serviceIntent)
+                    } catch (_: Exception) {}
+                    result.success(true)
+                }
+
                 "isOverlayRunning" -> {
                     result.success(HanglyOverlayService.isRunning)
                 }

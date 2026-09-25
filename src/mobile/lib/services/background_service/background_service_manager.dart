@@ -2,6 +2,8 @@ import 'dart:typed_data';
 import '../../core/platform/hangly_channel.dart';
 
 class BackgroundServiceManager {
+  static bool isExiting = false;
+  
   final HanglyChannel _channel;
 
   BackgroundServiceManager({HanglyChannel? channel})
@@ -36,6 +38,10 @@ class BackgroundServiceManager {
 
   Future<bool> disableOverlay() async {
     return _channel.stopOverlayService();
+  }
+
+  Future<bool> killOverlay() async {
+    return _channel.killOverlayService();
   }
 
   Future<bool> isRunning() async {

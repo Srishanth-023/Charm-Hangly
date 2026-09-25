@@ -56,6 +56,16 @@ class HanglyChannel {
     }
   }
 
+  Future<bool> killOverlayService() async {
+    try {
+      final bool? killed =
+          await _channel.invokeMethod<bool>('killOverlayService');
+      return killed ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<bool> isOverlayRunning() async {
     try {
       final bool? running =
