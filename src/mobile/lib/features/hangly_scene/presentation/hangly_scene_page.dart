@@ -720,16 +720,38 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                 ),
               ),
 
-              // 7. Glitter Popper (Explodes from center)
+              // 7. Regular Paper Confetti (Explodes from center)
               Align(
                 alignment: Alignment.center,
                 child: ConfettiWidget(
                   confettiController: _confettiController,
                   blastDirection: -math.pi / 2, // Shoot UP
-                  maxBlastForce: 35, // High blast force to shoot high
+                  maxBlastForce: 30, // Normal blast force
+                  minBlastForce: 10,
+                  emissionFrequency: 0.1,
+                  numberOfParticles: 25,
+                  gravity: 0.15,
+                  colors: const [
+                    Colors.redAccent,
+                    Colors.blueAccent,
+                    Colors.greenAccent,
+                    Colors.yellowAccent,
+                    Colors.purpleAccent,
+                    Colors.orangeAccent,
+                  ],
+                ),
+              ),
+
+              // 8. Glitter Sparkles (Explodes from center alongside confetti)
+              Align(
+                alignment: Alignment.center,
+                child: ConfettiWidget(
+                  confettiController: _confettiController,
+                  blastDirection: -math.pi / 2, // Shoot UP
+                  maxBlastForce: 40, // Shoots slightly higher
                   minBlastForce: 15,
                   emissionFrequency: 0.1, // More particles
-                  numberOfParticles: 50, // Dense for glitter effect
+                  numberOfParticles: 40, // Dense for glitter effect
                   gravity: 0.1, // Float down gently
                   minimumSize: const Size(6, 6),
                   maximumSize: const Size(14, 14),
