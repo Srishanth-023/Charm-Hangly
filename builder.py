@@ -116,7 +116,7 @@ def kill_running_instances():
     if platform.system() == "Windows":
         try:
             subprocess.run(
-                ["taskkill", "/F", "/IM", "Hangly.exe"],
+                ["taskkill", "/F", "/IM", "Charm Hangly.exe"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 check=False,
@@ -176,7 +176,7 @@ def verify_payload(output_dir: Path) -> bool:
         return False
 
     required_files = [
-        "Hangly.exe",
+        "Charm Hangly.exe",
         "Hangly.Core.dll",
         "Microsoft.ui.xaml.dll",
         "Microsoft.WindowsAppRuntime.Bootstrap.dll",
@@ -217,9 +217,9 @@ def verify_payload(output_dir: Path) -> bool:
             print(f"  - {m}")
         return False
 
-    main_exe = output_dir / "Portable" / "Hangly.exe"
+    main_exe = output_dir / "Portable" / "Charm Hangly.exe"
     if not main_exe.is_file():
-        main_exe = output_dir / "Hangly.exe"
+        main_exe = output_dir / "Charm Hangly.exe"
 
     print(f"[builder] Payload verified successfully!")
     setup_candidates = list(output_dir.glob("*Setup*.exe"))
@@ -295,11 +295,11 @@ def publish_target(dotnet_exe: Path, arch: str, config: str) -> bool:
             pass
 
     # Ensure resources.pri exists (WinUI 3 unpackaged apps expect resources.pri)
-    hangly_pri = portable_dir / "Hangly.pri"
+    hangly_pri = portable_dir / "Charm Hangly.pri"
     resources_pri = portable_dir / "resources.pri"
     if hangly_pri.is_file() and not resources_pri.is_file():
         shutil.copy2(hangly_pri, resources_pri)
-        print(f"[builder] Created resources.pri from Hangly.pri")
+        print(f"[builder] Created resources.pri from Charm Hangly.pri")
 
     # Build Velopack Desktop Application Installer
     vpk_tool = find_vpk_tool()
@@ -308,15 +308,15 @@ def publish_target(dotnet_exe: Path, arch: str, config: str) -> bool:
         vpk_cmd = [
             str(vpk_tool),
             "pack",
-            "-u", "Hangly",
+            "-u", "CharmHangly",
             "-v", "1.0.0",
-            "--packTitle", "Hangly",
+            "--packTitle", "Charm Hangly",
             "--packAuthors", "sharancreatedthis",
             "-p", str(portable_dir),
             "-o", str(packages_dir),
             "-c", rid,
             "-r", rid,
-            "-e", "Hangly.exe",
+            "-e", "Charm Hangly.exe",
             "--shortcuts", "Desktop,StartMenuRoot",
         ]
         icon_path = SRC_DIR / "Hangly.App" / "Assets" / "hangly.ico"
@@ -328,13 +328,13 @@ def publish_target(dotnet_exe: Path, arch: str, config: str) -> bool:
             setup_candidates = list(packages_dir.glob("*Setup.exe"))
             if setup_candidates:
                 installer_exe = setup_candidates[0]
-                dest_installer = output_dir / f"Hangly-Setup-{arch}.exe"
+                dest_installer = output_dir / f"CharmHangly-Setup-{arch}.exe"
                 shutil.copy2(installer_exe, dest_installer)
                 print(f"[builder] Desktop Application Installer ready: {dest_installer}")
             portable_zip_candidates = list(packages_dir.glob("*Portable.zip"))
             if portable_zip_candidates:
                 portable_zip = portable_zip_candidates[0]
-                dest_portable_zip = output_dir / f"Hangly-Portable-{arch}.zip"
+                dest_portable_zip = output_dir / f"CharmHangly-Portable-{arch}.zip"
                 shutil.copy2(portable_zip, dest_portable_zip)
                 print(f"[builder] Portable package ready: {dest_portable_zip}")
         else:
@@ -364,14 +364,14 @@ def collect_github_releases():
         if not output_dir.is_dir():
             continue
 
-        # 1. Desktop Application Installer (e.g. Hangly-Setup-x64.exe)
-        setup_exe = output_dir / f"Hangly-Setup-{arch}.exe"
+        # 1. Desktop Application Installer (e.g. CharmHangly-Setup-x64.exe)
+        setup_exe = output_dir / f"CharmHangly-Setup-{arch}.exe"
         if setup_exe.is_file():
             shutil.copy2(setup_exe, dist_dir / setup_exe.name)
             count += 1
 
-        # 2. Standalone Portable Zip (e.g. Hangly-Portable-x64.zip)
-        portable_zip = output_dir / f"Hangly-Portable-{arch}.zip"
+        # 2. Standalone Portable Zip (e.g. CharmHangly-Portable-x64.zip)
+        portable_zip = output_dir / f"CharmHangly-Portable-{arch}.zip"
         if portable_zip.is_file():
             shutil.copy2(portable_zip, dist_dir / portable_zip.name)
             count += 1
@@ -490,11 +490,12 @@ def prompt_target_interactive() -> str:
     print("   1) mobile - Build Android Flutter App (APK & App Bundle)")
     print("   2) x64    - Build Windows x64 Distribution & Tests")
     print("   3) arm64  - Build Windows ARM64 Distribution & Tests")
+    print("   4) all    - Build ALL applications (Mobile, x64, arm64)")
     print("=" * 60)
 
     while True:
         try:
-            choice = input("Select target [1/2/3 or mobile/x64/arm64, or 'q' to quit]: ").strip().lower()
+            choice = input("Select target [1/2/3/4 or mobile/x64/arm64/all, or 'q' to quit]: ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             print("\n[builder] Build cancelled by user.")
             sys.exit(0)
@@ -508,11 +509,14 @@ def prompt_target_interactive() -> str:
         elif choice in ["3", "arm64"]:
             print("[builder] Selected target: arm64 (Windows ARM64)")
             return "arm64"
+        elif choice in ["4", "all"]:
+            print("[builder] Selected target: all (Mobile + Windows x64 & arm64)")
+            return "all"
         elif choice in ["q", "quit", "exit"]:
             print("[builder] Build cancelled by user.")
             sys.exit(0)
         else:
-            print(f"[builder] Invalid choice '{choice}'. Please enter 1, 2, 3, mobile, x64, arm64, or q.")
+            print(f"[builder] Invalid choice '{choice}'. Please enter 1, 2, 3, 4, mobile, x64, arm64, all, or q.")
 
 
 def main():
@@ -563,8 +567,8 @@ def main():
     elif args.arch:
         selected_target = args.arch
 
-    # If no target specified and running in interactive terminal, prompt the user
-    if selected_target is None and sys.stdin.isatty() and not (args.clean and not (args.test or args.publish)):
+    # If no target specified, prompt the user
+    if selected_target is None and not (args.clean and not (args.test or args.publish)):
         selected_target = prompt_target_interactive()
     elif selected_target is None:
         # Default fallback for automated non-interactive runs
@@ -579,7 +583,7 @@ def main():
         clean_artifacts()
 
     # Execute Mobile target
-    if selected_target == "mobile":
+    if selected_target in ["mobile", "all"]:
         flutter_bin = check_mobile_prerequisites()
         if args.test:
             if not run_mobile_tests(flutter_bin):
@@ -588,7 +592,8 @@ def main():
             if not build_mobile(flutter_bin, args.configuration):
                 sys.exit(1)
         print("\n[builder] Mobile target completed successfully.")
-        sys.exit(0)
+        if selected_target == "mobile":
+            sys.exit(0)
 
     # Execute Windows targets
     dotnet_exe = find_dotnet_sdk()
