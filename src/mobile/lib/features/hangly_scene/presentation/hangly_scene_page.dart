@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:confetti/confetti.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/models/charm.dart';
@@ -41,6 +42,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
   late final MotionSensorService _sensorService;
   late final HanglyChannel _hanglyChannel;
   late Ticker _ticker;
+  late final ConfettiController _confettiController;
 
   HanglySettings _settings = HanglySettings.defaults;
   Charm _currentCharm = CharmCatalog.defaultCharm;
@@ -62,6 +64,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
   @override
   void initState() {
     super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
     WidgetsBinding.instance.addObserver(this);
 
     _simulation = RopeSimulation();
@@ -112,6 +115,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
       _initialized = true;
 
       _precacheCurrentCharm();
+      _confettiController.play();
 
       if (!hasPerm && !_dismissedPermissionBanner) {
         Future.delayed(const Duration(milliseconds: 700), () {
@@ -426,6 +430,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
 
   @override
   void dispose() {
+    _confettiController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _ticker.dispose();
     _sensorService.stop();
@@ -461,6 +466,22 @@ class _HanglyScenePageState extends State<HanglyScenePage>
 
           return Stack(
             children: [
+              // 0. Ambient Background Logo
+              Positioned.fill(
+                child: Center(
+                  child: IgnorePointer(
+                    child: Opacity(
+                      opacity: 0.1, // Reduced transparency to match UI
+                      child: Image.asset(
+                        'assets/images/mobile-icon.png',
+                        width: 250,
+                        height: 250,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
               // 1. Interactive Gesture Detector over entire scene
               Positioned.fill(
                 child: Listener(
@@ -693,6 +714,28 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                     _hanglyChannel.killOverlayService();
                     SystemNavigator.pop();
                   },
+                ),
+              ),
+
+              // 7. Confetti Popper (Falls from top center)
+              Align(
+                alignment: Alignment.topCenter,
+                child: ConfettiWidget(
+                  confettiController: _confettiController,
+                  blastDirection: math.pi / 2, // Straight down
+                  maxBlastForce: 25, // Fall speed
+                  minBlastForce: 10,
+                  emissionFrequency: 0.05,
+                  numberOfParticles: 25,
+                  gravity: 0.2,
+                  colors: const [
+                    Colors.red,
+                    Colors.blue,
+                    Colors.green,
+                    Colors.yellow,
+                    Colors.purple,
+                    Colors.orange,
+                  ],
                 ),
               ),
             ],
