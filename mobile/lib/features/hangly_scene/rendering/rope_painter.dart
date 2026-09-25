@@ -17,8 +17,9 @@ class RopePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (points.length < 2) return;
 
-    final ropeColor = RopeStyleTable.colorOf(style);
-    final ropeWidth = RopeStyleTable.strokeWidthOf(style);
+    // Match Android overlay exactly
+    final ropeColor = style == RopeStyle.goldChain ? const Color(0xFFFFD700) : primaryColor;
+    final ropeWidth = 4.5;
 
     // 1. Ambient Glow behind cord for Neon style
     if (style == RopeStyle.neon) {
@@ -76,15 +77,7 @@ class RopePainter extends CustomPainter {
       }
     }
 
-    // 4. Anchor Knot at the top
-    final knotPaint = Paint()
-      ..color = ropeColor
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(
-      Offset(points[0].position.x, points[0].position.y),
-      ropeWidth * 1.4,
-      knotPaint,
-    );
+    // Removed Anchor Knot at the top as requested by the user
   }
 
   @override

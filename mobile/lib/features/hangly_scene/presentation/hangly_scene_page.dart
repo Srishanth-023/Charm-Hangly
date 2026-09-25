@@ -454,78 +454,74 @@ class _HanglyScenePageState extends State<HanglyScenePage>
           final charmNode = _simulation.points.isNotEmpty
               ? _simulation.points.last
               : null;
-          final charmRadius = _simulation.charmLayout.slots.isNotEmpty
-              ? _simulation.charmLayout.slots.last.radius
-              : 30.0;
-          final charmDiameter = charmRadius * 2.2;
+          // Android overlay uses radius = _settings.charmSize * 25.0, so diameter is 50.0
+          final charmDiameter = _settings.charmSize * 50.0;
           final orientation = _simulation.charmOrientation - (math.pi / 2.0);
 
           return Stack(
             children: [
               // 1. Interactive Gesture Detector over entire scene
-              if (!Platform.isAndroid) ...[
-                Positioned.fill(
-                  child: Listener(
-                    behavior: HitTestBehavior.opaque,
-                    onPointerDown: _onPointerDown,
-                    onPointerMove: _onPointerMove,
-                    onPointerUp: _onPointerUp,
-                    child: Semantics(
-                      label: 'Hangly rope and ${_currentCharm.name} charm. Drag or flick to swing.',
-                      child: CustomPaint(
-                        painter: RopePainter(
-                          points: _simulation.points,
-                          style: _settings.ropeStyle,
-                          primaryColor: _currentCharm.primaryColor,
-                        ),
-                        size: Size(width, height),
+              Positioned.fill(
+                child: Listener(
+                  behavior: HitTestBehavior.opaque,
+                  onPointerDown: _onPointerDown,
+                  onPointerMove: _onPointerMove,
+                  onPointerUp: _onPointerUp,
+                  child: Semantics(
+                    label: 'Hangly rope and ${_currentCharm.name} charm. Drag or flick to swing.',
+                    child: CustomPaint(
+                      painter: RopePainter(
+                        points: _simulation.points,
+                        style: _settings.ropeStyle,
+                        primaryColor: _currentCharm.primaryColor,
+                      ),
+                      size: Size(width, height),
+                    ),
+                  ),
+                ),
+              ),
+
+              // 2. Render Charm SVG at bottom node
+              if (charmNode != null)
+                Positioned(
+                  left: charmNode.position.x - (charmDiameter / 2.0),
+                  top: charmNode.position.y - (charmDiameter / 2.0),
+                  width: charmDiameter,
+                  height: charmDiameter,
+                  child: IgnorePointer(
+                    child: Transform.rotate(
+                      angle: orientation,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Subtle ambient halo
+                          Container(
+                            width: charmDiameter * 1.1,
+                            height: charmDiameter * 1.1,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _currentCharm.primaryColor.withAlpha(50),
+                                  blurRadius: 24,
+                                  spreadRadius: 4,
+                                ),
+                              ],
+                            ),
+                          ),
+                          // SVG Charm Artwork
+                          SvgPicture.asset(
+                            _currentCharm.assetPath,
+                            width: charmDiameter,
+                            height: charmDiameter,
+                            fit: BoxFit.contain,
+                            placeholderBuilder: (_) => const CircularProgressIndicator.adaptive(),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-
-                // 2. Render Charm SVG at bottom node
-                if (charmNode != null)
-                  Positioned(
-                    left: charmNode.position.x - (charmDiameter / 2.0),
-                    top: charmNode.position.y - (charmDiameter / 2.0),
-                    width: charmDiameter,
-                    height: charmDiameter,
-                    child: IgnorePointer(
-                      child: Transform.rotate(
-                        angle: orientation,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Subtle ambient halo
-                            Container(
-                              width: charmDiameter * 1.1,
-                              height: charmDiameter * 1.1,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: _currentCharm.primaryColor.withAlpha(50),
-                                    blurRadius: 24,
-                                    spreadRadius: 4,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // SVG Charm Artwork
-                            SvgPicture.asset(
-                              _currentCharm.assetPath,
-                              width: charmDiameter,
-                              height: charmDiameter,
-                              fit: BoxFit.contain,
-                              placeholderBuilder: (_) => const CircularProgressIndicator.adaptive(),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
 
               // 3. Quick Action Bar (Top Left, balanced with top-right charm)
               Positioned(

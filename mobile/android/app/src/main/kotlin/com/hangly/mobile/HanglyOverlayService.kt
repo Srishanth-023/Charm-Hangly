@@ -735,6 +735,7 @@ class HanglyOverlayService : Service() {
             // 1. Draw Rope Path
             ropePath.reset()
             ropePath.moveTo(points[0].x, points[0].y)
+            
             for (i in 1 until points.size) {
                 val prev = points[i - 1]
                 val curr = points[i]
@@ -746,9 +747,7 @@ class HanglyOverlayService : Service() {
             ropePath.lineTo(last.x, last.y)
             canvas.drawPath(ropePath, ropePaint)
 
-            // 2. Draw Fixed Top Anchor Knot / Ring
-            canvas.drawCircle(curAnchorX, curAnchorY, 6.5f * density, knotPaint)
-            canvas.drawCircle(curAnchorX, curAnchorY, 2.5f * density, knotCorePaint)
+            // Removed Fixed Top Anchor Knot / Ring as requested by user
 
             // 3. Calculate Charm Angle from last rope segment
             val secondLast = points[points.size - 2]

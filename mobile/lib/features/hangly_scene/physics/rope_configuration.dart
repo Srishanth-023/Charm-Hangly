@@ -126,7 +126,10 @@ class RopeConfiguration {
     final actualRopeLength = (baseRopeLength * ropeLength).clamp(50.0, 320.0);
     final segLen = actualRopeLength / base.segmentCount;
     final charmUnit = baseCharmUnit;
-    final anchorH = math.max(16.0, canvasHeight * RopeLayout.anchorFraction);
+    
+    // Anchor exactly at the top edge of the screen (0.0) so it matches Android exactly
+    const anchorH = 0.0;
+    
     final totalLen = base.segmentCount * segLen;
     final slack = math.max(0.0, canvasHeight - anchorH - totalLen);
 
