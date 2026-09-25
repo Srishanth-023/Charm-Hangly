@@ -19,7 +19,7 @@ class RopePainter extends CustomPainter {
 
     // Match Android overlay exactly
     final ropeColor = style == RopeStyle.goldChain ? const Color(0xFFFFD700) : primaryColor;
-    final ropeWidth = 4.5;
+    final ropeWidth = 3.8;
 
     // 1. Ambient Glow behind cord for Neon style
     if (style == RopeStyle.neon) {

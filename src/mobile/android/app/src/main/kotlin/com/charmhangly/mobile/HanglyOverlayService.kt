@@ -443,7 +443,7 @@ class HanglyOverlayService : Service() {
 
         private val ropePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = 4.5f * density
+            strokeWidth = 3.8f * density
             strokeCap = Paint.Cap.ROUND
             strokeJoin = Paint.Join.ROUND
         }
