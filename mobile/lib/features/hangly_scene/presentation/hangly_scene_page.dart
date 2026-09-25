@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -217,6 +218,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
       ropeColor: ropeColorHex,
       ropeLength: ropeLen,
       charmRadius: radius,
+      hapticsEnabled: _settings.hapticsEnabled,
     );
 
     // If precomputation wasn't ready, resolve in background and refresh overlay
@@ -230,6 +232,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
               ropeColor: ropeColorHex,
               ropeLength: ropeLen,
               charmRadius: radius,
+              hapticsEnabled: _settings.hapticsEnabled,
             );
           }
         }
@@ -460,67 +463,69 @@ class _HanglyScenePageState extends State<HanglyScenePage>
           return Stack(
             children: [
               // 1. Interactive Gesture Detector over entire scene
-              Positioned.fill(
-                child: Listener(
-                  behavior: HitTestBehavior.opaque,
-                  onPointerDown: _onPointerDown,
-                  onPointerMove: _onPointerMove,
-                  onPointerUp: _onPointerUp,
-                  child: Semantics(
-                    label: 'Hangly rope and ${_currentCharm.name} charm. Drag or flick to swing.',
-                    child: CustomPaint(
-                      painter: RopePainter(
-                        points: _simulation.points,
-                        style: _settings.ropeStyle,
-                        primaryColor: _currentCharm.primaryColor,
+              if (!Platform.isAndroid) ...[
+                Positioned.fill(
+                  child: Listener(
+                    behavior: HitTestBehavior.opaque,
+                    onPointerDown: _onPointerDown,
+                    onPointerMove: _onPointerMove,
+                    onPointerUp: _onPointerUp,
+                    child: Semantics(
+                      label: 'Hangly rope and ${_currentCharm.name} charm. Drag or flick to swing.',
+                      child: CustomPaint(
+                        painter: RopePainter(
+                          points: _simulation.points,
+                          style: _settings.ropeStyle,
+                          primaryColor: _currentCharm.primaryColor,
+                        ),
+                        size: Size(width, height),
                       ),
-                      size: Size(width, height),
                     ),
                   ),
                 ),
-              ),
 
-              // 2. Render Charm SVG at bottom node
-              if (charmNode != null)
-                Positioned(
-                  left: charmNode.position.x - (charmDiameter / 2.0),
-                  top: charmNode.position.y - (charmDiameter / 2.0),
-                  width: charmDiameter,
-                  height: charmDiameter,
-                  child: IgnorePointer(
-                    child: Transform.rotate(
-                      angle: orientation,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Subtle ambient halo
-                          Container(
-                            width: charmDiameter * 1.1,
-                            height: charmDiameter * 1.1,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: _currentCharm.primaryColor.withAlpha(50),
-                                  blurRadius: 24,
-                                  spreadRadius: 4,
-                                ),
-                              ],
+                // 2. Render Charm SVG at bottom node
+                if (charmNode != null)
+                  Positioned(
+                    left: charmNode.position.x - (charmDiameter / 2.0),
+                    top: charmNode.position.y - (charmDiameter / 2.0),
+                    width: charmDiameter,
+                    height: charmDiameter,
+                    child: IgnorePointer(
+                      child: Transform.rotate(
+                        angle: orientation,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Subtle ambient halo
+                            Container(
+                              width: charmDiameter * 1.1,
+                              height: charmDiameter * 1.1,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _currentCharm.primaryColor.withAlpha(50),
+                                    blurRadius: 24,
+                                    spreadRadius: 4,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          // SVG Charm Artwork
-                          SvgPicture.asset(
-                            _currentCharm.assetPath,
-                            width: charmDiameter,
-                            height: charmDiameter,
-                            fit: BoxFit.contain,
-                            placeholderBuilder: (_) => const CircularProgressIndicator.adaptive(),
-                          ),
-                        ],
+                            // SVG Charm Artwork
+                            SvgPicture.asset(
+                              _currentCharm.assetPath,
+                              width: charmDiameter,
+                              height: charmDiameter,
+                              fit: BoxFit.contain,
+                              placeholderBuilder: (_) => const CircularProgressIndicator.adaptive(),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
+              ],
 
               // 3. Quick Action Bar (Top Left, balanced with top-right charm)
               Positioned(

@@ -61,6 +61,7 @@ void main() {
         'ropeColor': '#FFD700',
         'ropeLength': 140.0,
         'charmRadius': 26.0,
+        'hapticsEnabled': true,
       });
     });
 

@@ -27,6 +27,7 @@ class HanglyChannel {
     String ropeColor = '#FFD700',
     double ropeLength = 140.0,
     double charmRadius = 26.0,
+    bool hapticsEnabled = true,
   }) async {
     try {
       final bool? started = await _channel.invokeMethod<bool>(
@@ -36,6 +37,7 @@ class HanglyChannel {
           'ropeColor': ropeColor,
           'ropeLength': ropeLength,
           'charmRadius': charmRadius,
+          'hapticsEnabled': hapticsEnabled,
         },
       );
       return started ?? false;

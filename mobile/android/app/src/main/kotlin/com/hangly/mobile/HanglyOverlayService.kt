@@ -73,6 +73,9 @@ class HanglyOverlayService : Service() {
     var anchorY: Float = 0f
         private set
 
+    var hapticsEnabled: Boolean = true
+        private set
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -122,6 +125,9 @@ class HanglyOverlayService : Service() {
                 val ropeColor = intent?.getStringExtra("ropeColor") ?: "#FFD700"
                 val ropeLength = intent?.getFloatExtra("ropeLength", 135f) ?: 135f
                 val charmRadius = intent?.getFloatExtra("charmRadius", 25f) ?: 25f
+                if (intent?.hasExtra("hapticsEnabled") == true) {
+                    hapticsEnabled = intent.getBooleanExtra("hapticsEnabled", true)
+                }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !android.provider.Settings.canDrawOverlays(this)) {
                     android.util.Log.w("HanglyOverlay", "Missing Settings.canDrawOverlays permission!")
@@ -796,6 +802,9 @@ class HanglyOverlayService : Service() {
                     touchVx = 0f
                     touchVy = 0f
                     service.displayView?.onCharmDragStart()
+                    if (service.hapticsEnabled) {
+                        performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+                    }
                     return true
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -821,6 +830,9 @@ class HanglyOverlayService : Service() {
                             service.displayView?.onCharmFling(touchVx, touchVy)
                         } else {
                             service.displayView?.onCharmTap()
+                        }
+                        if (service.hapticsEnabled) {
+                            performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
                         }
                         return true
                     }
