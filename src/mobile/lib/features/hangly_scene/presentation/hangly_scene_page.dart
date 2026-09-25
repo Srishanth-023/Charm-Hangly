@@ -720,24 +720,26 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                 ),
               ),
 
-              // 7. Confetti Popper (Explodes from center)
+              // 7. Glitter Popper (Explodes from center)
               Align(
                 alignment: Alignment.center,
                 child: ConfettiWidget(
                   confettiController: _confettiController,
                   blastDirection: -math.pi / 2, // Shoot UP
-                  maxBlastForce: 30, // High blast force to shoot high
-                  minBlastForce: 10,
+                  maxBlastForce: 35, // High blast force to shoot high
+                  minBlastForce: 15,
                   emissionFrequency: 0.1, // More particles
-                  numberOfParticles: 35,
-                  gravity: 0.15, // Float down gently
+                  numberOfParticles: 50, // Dense for glitter effect
+                  gravity: 0.1, // Float down gently
+                  minimumSize: const Size(6, 6),
+                  maximumSize: const Size(14, 14),
+                  createParticlePath: _drawSparkle,
                   colors: const [
-                    Colors.redAccent,
-                    Colors.blueAccent,
-                    Colors.greenAccent,
-                    Colors.yellowAccent,
-                    Colors.purpleAccent,
-                    Colors.orangeAccent,
+                    Color(0xFFFFD700), // Gold
+                    Color(0xFFC0C0C0), // Silver
+                    Color(0xFFB76E79), // Rose Gold
+                    Color(0xFFE8F48C), // Light yellow sparkle
+                    Color(0xFFFFFFFF), // Pure White
                   ],
                 ),
               ),
@@ -765,5 +767,27 @@ class _HanglyScenePageState extends State<HanglyScenePage>
         onPressed: onPressed,
       ),
     );
+  }
+
+  Path _drawSparkle(Size size) {
+    double degToRad(double deg) => deg * (math.pi / 180.0);
+    const numberOfPoints = 4;
+    final halfWidth = size.width / 2;
+    final externalRadius = halfWidth;
+    final internalRadius = halfWidth / 4.0;
+    final degreesPerStep = degToRad(360 / numberOfPoints);
+    final halfDegreesPerStep = degreesPerStep / 2;
+    final path = Path();
+    final fullAngle = degToRad(360);
+    
+    path.moveTo(size.width, halfWidth);
+    for (double step = 0; step < fullAngle; step += degreesPerStep) {
+      path.lineTo(halfWidth + externalRadius * math.cos(step),
+          halfWidth + externalRadius * math.sin(step));
+      path.lineTo(halfWidth + internalRadius * math.cos(step + halfDegreesPerStep),
+          halfWidth + internalRadius * math.sin(step + halfDegreesPerStep));
+    }
+    path.close();
+    return path;
   }
 }
