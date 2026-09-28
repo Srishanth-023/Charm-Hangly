@@ -9,6 +9,7 @@ class Charm {
   final CharmMetrics metrics;
   final Color primaryColor;
   final String description;
+  final bool isCustom;
 
   const Charm({
     required this.id,
@@ -18,7 +19,32 @@ class Charm {
     required this.metrics,
     required this.primaryColor,
     this.description = '',
+    this.isCustom = false,
   });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'category': category,
+        'assetPath': assetPath,
+        'metrics': metrics.toJson(),
+        'primaryColor': primaryColor.value,
+        'description': description,
+        'isCustom': isCustom,
+      };
+
+  factory Charm.fromJson(Map<String, dynamic> json) {
+    return Charm(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      category: json['category'] as String,
+      assetPath: json['assetPath'] as String,
+      metrics: CharmMetrics.fromJson(json['metrics'] as Map<String, dynamic>),
+      primaryColor: Color(json['primaryColor'] as int),
+      description: json['description'] as String? ?? '',
+      isCustom: json['isCustom'] as bool? ?? false,
+    );
+  }
 
   @override
   bool operator ==(Object other) =>

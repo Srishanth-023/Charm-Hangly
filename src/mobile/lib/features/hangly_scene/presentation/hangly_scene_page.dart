@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:confetti/confetti.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/models/charm.dart';
@@ -13,6 +12,7 @@ import '../../../core/models/charm_catalog.dart';
 import '../../../core/models/rope_style.dart';
 import '../../../core/models/settings.dart';
 import '../../../core/persistence/settings_storage.dart';
+import '../../../core/widgets/charm_widget.dart';
 import '../../../core/platform/hangly_channel.dart';
 import '../../../core/utils/charm_rasterizer.dart';
 import '../../../services/background_service/background_service_manager.dart';
@@ -536,13 +536,14 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                               ],
                             ),
                           ),
-                          // SVG Charm Artwork
-                          SvgPicture.asset(
-                            _currentCharm.assetPath,
+                          // Charm Artwork
+                          SizedBox(
                             width: charmDiameter,
                             height: charmDiameter,
-                            fit: BoxFit.contain,
-                            placeholderBuilder: (_) => const CircularProgressIndicator.adaptive(),
+                            child: CharmWidget(
+                              charm: _currentCharm,
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ],
                       ),
@@ -838,13 +839,24 @@ class WordByWordAnimation extends StatefulWidget {
   State<WordByWordAnimation> createState() => _WordByWordAnimationState();
 }
 
-class _WordByWordAnimationState extends State<WordByWordAnimation> {
+class _WordByWordAnimationState extends State<WordByWordAnimation> with SingleTickerProviderStateMixin {
   String _displayedText = "";
+  late AnimationController _shimmerController;
 
   @override
   void initState() {
     super.initState();
     _typeText();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
   }
 
   Future<void> _typeText() async {
@@ -873,27 +885,50 @@ class _WordByWordAnimationState extends State<WordByWordAnimation> {
         final isFirstWord = index == 0;
         final isSecondWord = index == 1;
 
-        return Text(
-          words[index],
-          style: GoogleFonts.greatVibes(
-            fontSize: isFirstWord ? 64 : (isSecondWord ? 96 : 72),
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFFE91E63), // Glittery pink
-            height: 0.95,
-            shadows: [
-              Shadow(
-                color: Colors.pinkAccent.withAlpha(100),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-              const Shadow(
-                color: Colors.white,
-                blurRadius: 2,
-                offset: Offset(1, 1),
-              ),
-            ],
+        return AnimatedBuilder(
+          animation: _shimmerController,
+          builder: (context, child) {
+            return ShaderMask(
+              blendMode: BlendMode.srcATop,
+              shaderCallback: (bounds) {
+                final glint = _shimmerController.value * 2.0 - 0.5;
+                return LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    Colors.white.withAlpha(200),
+                    Colors.transparent,
+                  ],
+                  stops: [glint - 0.1, glint, glint + 0.1],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(bounds);
+              },
+              child: child,
+            );
+          },
+          child: Text(
+            words[index],
+            style: TextStyle(
+              fontFamily: 'GreatVibes',
+              fontSize: isFirstWord ? 64 : (isSecondWord ? 96 : 72),
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFFE91E63), // Original beautiful pink
+              height: 0.95,
+              shadows: [
+                Shadow(
+                  color: Colors.pinkAccent.withAlpha(100),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+                const Shadow(
+                  color: Colors.white,
+                  blurRadius: 2,
+                  offset: Offset(1, 1),
+                ),
+              ],
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
         );
       }),
     );

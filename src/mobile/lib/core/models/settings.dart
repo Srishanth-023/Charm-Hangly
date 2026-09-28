@@ -1,4 +1,5 @@
 import 'rope_style.dart';
+import 'charm.dart';
 
 class HanglySettings {
   final String selectedCharmId;
@@ -10,6 +11,7 @@ class HanglySettings {
   final bool backgroundOverlayEnabled;
   final double physicsStrength;
   final List<String> favourites;
+  final List<Charm> customCharms;
 
   const HanglySettings({
     this.selectedCharmId = 'nazar',
@@ -21,6 +23,7 @@ class HanglySettings {
     this.backgroundOverlayEnabled = true,
     this.physicsStrength = 1.0,
     this.favourites = const ['nazar', 'daruma', 'iron_man', 'messi'],
+    this.customCharms = const [],
   });
 
   static const HanglySettings defaults = HanglySettings();
@@ -35,6 +38,7 @@ class HanglySettings {
     bool? backgroundOverlayEnabled,
     double? physicsStrength,
     List<String>? favourites,
+    List<Charm>? customCharms,
   }) {
     return HanglySettings(
       selectedCharmId: selectedCharmId ?? this.selectedCharmId,
@@ -48,6 +52,7 @@ class HanglySettings {
       physicsStrength:
           (physicsStrength ?? this.physicsStrength).clamp(0.5, 2.0),
       favourites: favourites ?? this.favourites,
+      customCharms: customCharms ?? this.customCharms,
     );
   }
 
@@ -61,6 +66,7 @@ class HanglySettings {
         'backgroundOverlayEnabled': backgroundOverlayEnabled,
         'physicsStrength': physicsStrength,
         'favourites': favourites,
+        'customCharms': customCharms.map((c) => c.toJson()).toList(),
       };
 
   factory HanglySettings.fromJson(Map<String, dynamic> json) {
@@ -73,6 +79,13 @@ class HanglySettings {
         }
       }
     }
+
+    final customCharmsJson = json['customCharms'] as List<dynamic>?;
+    final List<Charm> parsedCustomCharms = customCharmsJson != null
+        ? customCharmsJson
+            .map((e) => Charm.fromJson(e as Map<String, dynamic>))
+            .toList()
+        : const [];
 
     return HanglySettings(
       selectedCharmId: json['selectedCharmId'] as String? ?? 'nazar',
@@ -88,6 +101,7 @@ class HanglySettings {
               ?.map((e) => e.toString())
               .toList() ??
           const ['nazar', 'daruma', 'iron_man', 'messi'],
+      customCharms: parsedCustomCharms,
     );
   }
 

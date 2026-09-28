@@ -12,6 +12,20 @@ class CharmMetrics {
     required this.knotInset,
   });
 
+  Map<String, dynamic> toJson() => {
+        'mass': mass,
+        'radiusRatio': radiusRatio,
+        'knotInset': knotInset,
+      };
+
+  factory CharmMetrics.fromJson(Map<String, dynamic> json) {
+    return CharmMetrics(
+      mass: (json['mass'] as num).toDouble(),
+      radiusRatio: (json['radiusRatio'] as num).toDouble(),
+      knotInset: (json['knotInset'] as num).toDouble(),
+    );
+  }
+
   /// The shipped default, matching the plain bead.
   static const CharmMetrics defaultValue = CharmMetrics(
     mass: 2.6,

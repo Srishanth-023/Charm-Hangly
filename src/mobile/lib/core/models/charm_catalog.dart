@@ -18,6 +18,7 @@ class CharmCatalog {
     CharmCategory(id: 'friends', name: 'Friends', icon: Icons.coffee),
     CharmCategory(id: 'breakingBad', name: 'Breaking Bad', icon: Icons.science),
     CharmCategory(id: 'strangerThings', name: 'Stranger Things', icon: Icons.lightbulb),
+    CharmCategory(id: 'custom', name: 'Custom Charms', icon: Icons.palette),
   ];
 
   static const Charm defaultCharm = Charm(

@@ -1,11 +1,16 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/models/charm.dart';
 import '../../../core/models/charm_catalog.dart';
 import '../../../core/models/settings.dart';
 import '../../../core/persistence/settings_storage.dart';
+import '../../../core/widgets/charm_widget.dart';
+import '../../hangly_scene/physics/charm_metrics.dart';
 
 class CharmLibraryPage extends StatefulWidget {
   final Charm currentCharm;
@@ -56,11 +61,22 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final allCustom = widget.settings.customCharms;
     List<Charm> charms;
     if (_searchQuery.isNotEmpty) {
-      charms = CharmCatalog.search(_searchQuery);
+      final q = _searchQuery.toLowerCase().trim();
+      charms = [
+        ...CharmCatalog.search(_searchQuery),
+        ...allCustom.where((c) => c.name.toLowerCase().contains(q)),
+      ];
     } else {
-      charms = CharmCatalog.byCategory(_selectedCategory);
+      if (_selectedCategory == 'all') {
+        charms = [...CharmCatalog.byCategory('all'), ...allCustom];
+      } else if (_selectedCategory == 'custom') {
+        charms = allCustom;
+      } else {
+        charms = CharmCatalog.byCategory(_selectedCategory);
+      }
     }
 
     return Scaffold(
@@ -210,12 +226,7 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
                                   children: [
                                     Expanded(
                                       child: Center(
-                                        child: SvgPicture.asset(
-                                          charm.assetPath,
-                                          fit: BoxFit.contain,
-                                          placeholderBuilder: (_) =>
-                                              const CircularProgressIndicator.adaptive(),
-                                        ),
+                                        child: CharmWidget(charm: charm),
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -285,6 +296,50 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _addCustomCharm,
+        backgroundColor: HanglyTheme.primary,
+        icon: const Icon(Icons.add, color: Colors.black),
+        label: const Text('Add Custom', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+      ),
     );
+  }
+
+  Future<void> _addCustomCharm() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile == null) return;
+    
+    final appDir = await getApplicationDocumentsDirectory();
+    final fileName = pickedFile.name;
+    final savedImage = File('${appDir.path}/$fileName');
+    await File(pickedFile.path).copy(savedImage.path);
+    
+    final newCharm = Charm(
+      id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+      name: fileName.split('.').first,
+      category: 'custom',
+      assetPath: savedImage.path,
+      metrics: const CharmMetrics(mass: 3.0, radiusRatio: 0.15, knotInset: 0.90),
+      primaryColor: Colors.white,
+      description: 'A custom charm added from your device.',
+      isCustom: true,
+    );
+    
+    final updatedCharms = List<Charm>.from(widget.settings.customCharms)..add(newCharm);
+    final updatedSettings = widget.settings.copyWith(customCharms: updatedCharms);
+    await widget.storage.saveSettings(updatedSettings);
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Custom charm added!'), backgroundColor: HanglyTheme.primary),
+      );
+      // We also need to reload the UI to show the new settings
+      // Wait, since settings is passed to widget, we should ideally rebuild or update local state.
+      // But since CharmLibraryPage isn't listening to stream, we can pop and ask user to re-enter.
+      // Or we can just update widget.settings if it wasn't immutable, but it is.
+      // Easiest is to pop.
+      Navigator.pop(context, newCharm);
+    }
   }
 }
