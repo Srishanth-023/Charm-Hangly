@@ -47,6 +47,56 @@ body {
     }
 }
 
+/* Loader */
+.loader-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.loader-screen.loader-fade {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.loader-mark {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ink);
+}
+
+.loader-mark span {
+    background: var(--gold-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+.loader-spinner {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 3px solid var(--yellow-tint);
+    border-top-color: var(--yellow);
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 /* Golden glitter overlay */
 .glitter-layer {
     position: fixed;
@@ -152,6 +202,11 @@ body {
     opacity: 0;
     transform: scale(0.5);
     animation: pop-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation-play-state: paused;
+}
+
+.app.is-ready .hero-title span {
+    animation-play-state: running;
 }
 
 .hero-title .happy { animation-delay: 0.1s; }
@@ -177,6 +232,11 @@ body {
     opacity: 0;
     transform: scale(0.6);
     animation: pop-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.45s forwards;
+    animation-play-state: paused;
+}
+
+.app.is-ready .nene-image-wrapper {
+    animation-play-state: running;
 }
 
 .nene-glow {
@@ -214,6 +274,11 @@ body {
     font-size: 1.25rem;
     opacity: 0;
     animation: pop-in 0.5s ease 0.85s forwards, bob 2s ease-in-out 0.85s infinite;
+    animation-play-state: paused;
+}
+
+.app.is-ready .scroll-indicator {
+    animation-play-state: running;
 }
 
 @keyframes bob {

@@ -1,9 +1,11 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import './index.css';
 
 const YELLOW_COLORS = ['#F4A825', '#FFD873', '#ffffff'];
 const GLITTER_COUNT = 45;
+const HERO_IMAGE_SRC = '/nene-img.png';
+const LOADER_FADE_MS = 500;
 
 function popConfetti(originX) {
   confetti({
@@ -83,16 +85,49 @@ function App() {
   const glitterDots = useGlitterDots();
   useReveal();
 
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [showLoader, setShowLoader] = useState(true);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      popConfetti(0);
-      popConfetti(1);
-    }, 500);
-    return () => clearTimeout(timer);
+    const img = new Image();
+    const finish = () => setImageLoaded(true);
+    img.onload = finish;
+    img.onerror = finish;
+    img.src = HERO_IMAGE_SRC;
+    if (img.complete) finish();
   }, []);
 
+  useEffect(() => {
+    document.body.style.overflow = showLoader ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showLoader]);
+
+  useEffect(() => {
+    if (!imageLoaded) return;
+    const hideTimer = setTimeout(() => setShowLoader(false), LOADER_FADE_MS);
+    return () => clearTimeout(hideTimer);
+  }, [imageLoaded]);
+
+  useEffect(() => {
+    if (!imageLoaded) return;
+    const confettiTimer = setTimeout(() => {
+      popConfetti(0);
+      popConfetti(1);
+    }, LOADER_FADE_MS);
+    return () => clearTimeout(confettiTimer);
+  }, [imageLoaded]);
+
   return (
-    <>
+    <div className={`app${imageLoaded ? ' is-ready' : ''}`}>
+      {showLoader && (
+        <div className={`loader-screen${imageLoaded ? ' loader-fade' : ''}`} aria-hidden={imageLoaded}>
+          <div className="loader-mark">Charm <span>Hangly</span></div>
+          <div className="loader-spinner"></div>
+        </div>
+      )}
+
       <div className="glitter-layer" aria-hidden="true">
         {glitterDots.map((dot, i) => (
           <span
@@ -187,7 +222,7 @@ function App() {
         <p>&copy; 2026 Charm Hangly.</p>
         <p className="footer-credits">Made by Sri &lt;3 !!</p>
       </footer>
-    </>
+    </div>
   );
 }
 
