@@ -312,6 +312,40 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
     );
     if (result == null || result.isEmpty || result.single.path == null) return;
     
+    if (!mounted) return;
+    final controller = TextEditingController(text: result.single.name.split('.').first);
+    final customName = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: HanglyTheme.surfaceElevated,
+          title: const Text('Name your charm', style: TextStyle(color: HanglyTheme.textPrimary)),
+          content: TextField(
+            controller: controller,
+            style: const TextStyle(color: HanglyTheme.textPrimary),
+            decoration: const InputDecoration(
+              hintText: 'Charm Name',
+              hintStyle: TextStyle(color: HanglyTheme.textSecondary),
+              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: HanglyTheme.primary)),
+              focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: HanglyTheme.primary)),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, null),
+              child: const Text('Cancel', style: TextStyle(color: HanglyTheme.textSecondary)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, controller.text.trim()),
+              child: const Text('Save', style: TextStyle(color: HanglyTheme.primary)),
+            ),
+          ],
+        );
+      }
+    );
+
+    if (customName == null || customName.isEmpty) return;
+
     final appDir = await getApplicationDocumentsDirectory();
     final fileName = result.single.name;
     final savedImage = File('${appDir.path}/$fileName');
@@ -319,7 +353,7 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
     
     final newCharm = Charm(
       id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
-      name: fileName.split('.').first,
+      name: customName,
       category: 'custom',
       assetPath: savedImage.path,
       metrics: const CharmMetrics(mass: 3.0, radiusRatio: 0.15, knotInset: 0.90),
@@ -336,11 +370,6 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Custom charm added!'), backgroundColor: HanglyTheme.primary),
       );
-      // We also need to reload the UI to show the new settings
-      // Wait, since settings is passed to widget, we should ideally rebuild or update local state.
-      // But since CharmLibraryPage isn't listening to stream, we can pop and ask user to re-enter.
-      // Or we can just update widget.settings if it wasn't immutable, but it is.
-      // Easiest is to pop.
       Navigator.pop(context, newCharm);
     }
   }

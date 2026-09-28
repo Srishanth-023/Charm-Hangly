@@ -407,9 +407,10 @@ class _HanglyScenePageState extends State<HanglyScenePage>
     );
 
     if (selected != null && mounted) {
+      final latestSettings = await widget.storage.loadSettings();
       setState(() {
         _currentCharm = selected;
-        _settings = _settings.copyWith(selectedCharmId: selected.id);
+        _settings = latestSettings.copyWith(selectedCharmId: selected.id);
       });
       await widget.storage.saveSettings(_settings);
       _applySettingsToSimulation();
