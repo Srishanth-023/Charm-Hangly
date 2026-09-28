@@ -57,7 +57,8 @@ class _HanglyScenePageState extends State<HanglyScenePage>
 
   double _lastWidth = 0;
   double _lastHeight = 0;
-  bool _initialized = false;
+  
+  final ValueNotifier<int> _physicsTick = ValueNotifier(0);
 
   bool _hasOverlayPermission = true;
   bool _dismissedPermissionBanner = false;
@@ -122,7 +123,6 @@ class _HanglyScenePageState extends State<HanglyScenePage>
       _simulation.start();
       _ticker.start();
       _sensorService.start();
-      _initialized = true;
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _confettiController.play();
@@ -331,7 +331,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
     if (dt > 0) {
       // Step simulation with delta time (clamped)
       _simulation.step(math.min(dt, 0.05) * _settings.physicsStrength);
-      setState(() {});
+      _physicsTick.value++;
 
       // Battery conscious: idle ticker if rope has settled completely and not dragging
       if (_simulation.isSleeping && !_simulation.isDragging) {
@@ -479,13 +479,6 @@ class _HanglyScenePageState extends State<HanglyScenePage>
             );
           }
 
-          final charmNode = _simulation.points.isNotEmpty
-              ? _simulation.points.last
-              : null;
-          // Android overlay uses radius = _settings.charmSize * 25.0, so diameter is 50.0
-          final charmDiameter = _settings.charmSize * 50.0;
-          final orientation = _simulation.charmOrientation - (math.pi / 2.0);
-
           return Stack(
             children: [
               // 0. Ambient Background Logo
@@ -511,62 +504,79 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                   onPointerDown: _onPointerDown,
                   onPointerMove: _onPointerMove,
                   onPointerUp: _onPointerUp,
-                  child: Semantics(
-                    label: 'Hangly rope and ${_currentCharm.name} charm. Drag or flick to swing.',
-                    child: CustomPaint(
-                      painter: RopePainter(
-                        points: _simulation.points,
-                        style: _settings.ropeStyle,
-                        primaryColor: _currentCharm.primaryColor,
-                      ),
-                      size: Size(width, height),
-                    ),
+                  child: ValueListenableBuilder<int>(
+                    valueListenable: _physicsTick,
+                    builder: (context, _, __) {
+                      final charmNode = _simulation.points.isNotEmpty
+                          ? _simulation.points.last
+                          : null;
+                      // Android overlay uses radius = _settings.charmSize * 25.0, so diameter is 50.0
+                      final charmDiameter = _settings.charmSize * 50.0;
+                      final orientation = _simulation.charmOrientation - (math.pi / 2.0);
+
+                      return Stack(
+                        children: [
+                          Semantics(
+                            label: 'Hangly rope and ${_currentCharm.name} charm. Drag or flick to swing.',
+                            child: CustomPaint(
+                              painter: RopePainter(
+                                points: _simulation.points,
+                                style: _settings.ropeStyle,
+                                primaryColor: _currentCharm.primaryColor,
+                              ),
+                              size: Size(width, height),
+                            ),
+                          ),
+                          // 2. Render Charm SVG at bottom node
+                          if (charmNode != null)
+                            Positioned(
+                              left: charmNode.position.x - (charmDiameter / 2.0),
+                              top: charmNode.position.y - (charmDiameter / 2.0),
+                              width: charmDiameter,
+                              height: charmDiameter,
+                              child: IgnorePointer(
+                                child: Transform.rotate(
+                                  angle: orientation,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      // Subtle ambient halo
+                                      Container(
+                                        width: charmDiameter * 1.1,
+                                        height: charmDiameter * 1.1,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: _currentCharm.primaryColor.withAlpha(50),
+                                              blurRadius: 24,
+                                              spreadRadius: 4,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      // Charm Artwork
+                                      SizedBox(
+                                        width: charmDiameter,
+                                        height: charmDiameter,
+                                        child: RepaintBoundary(
+                                          child: CharmWidget(
+                                            charm: _currentCharm,
+                                            fit: BoxFit.contain,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),
-
-              // 2. Render Charm SVG at bottom node
-              if (charmNode != null)
-                Positioned(
-                  left: charmNode.position.x - (charmDiameter / 2.0),
-                  top: charmNode.position.y - (charmDiameter / 2.0),
-                  width: charmDiameter,
-                  height: charmDiameter,
-                  child: IgnorePointer(
-                    child: Transform.rotate(
-                      angle: orientation,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Subtle ambient halo
-                          Container(
-                            width: charmDiameter * 1.1,
-                            height: charmDiameter * 1.1,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: _currentCharm.primaryColor.withAlpha(50),
-                                  blurRadius: 24,
-                                  spreadRadius: 4,
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Charm Artwork
-                          SizedBox(
-                            width: charmDiameter,
-                            height: charmDiameter,
-                            child: CharmWidget(
-                              charm: _currentCharm,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
 
               // 3. Quick Action Bar (Top Left, balanced with top-right charm)
               Positioned(

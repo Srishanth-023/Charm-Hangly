@@ -52,13 +52,25 @@ class CharmRasterizer {
           return bytes;
         }
       } else {
-        // It's a PNG/JPG file or asset
         if (isCustom) {
           final file = File(path);
           if (await file.exists()) {
-            final bytes = await file.readAsBytes();
-            _cache[path] = bytes;
-            return bytes;
+            final rawBytes = await file.readAsBytes();
+            // Downscale to targetSize to prevent memory exhaustion and IPC lag
+            final codec = await ui.instantiateImageCodec(
+              rawBytes,
+              targetWidth: targetSize.toInt(),
+              targetHeight: targetSize.toInt(),
+            );
+            final frameInfo = await codec.getNextFrame();
+            final ui.Image image = frameInfo.image;
+            
+            final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+            if (byteData != null) {
+              final bytes = byteData.buffer.asUint8List();
+              _cache[path] = bytes;
+              return bytes;
+            }
           }
         } else {
           // It's a built-in asset, but all built-in charms are SVGs right now.

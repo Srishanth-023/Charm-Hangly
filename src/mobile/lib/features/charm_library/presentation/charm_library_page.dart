@@ -72,6 +72,9 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
     } else {
       if (_selectedCategory == 'all') {
         charms = [...CharmCatalog.byCategory('all'), ...allCustom];
+      } else if (_selectedCategory == 'favourites') {
+        final allCharms = [...CharmCatalog.byCategory('all'), ...allCustom];
+        charms = allCharms.where((c) => _favourites.contains(c.id)).toList();
       } else if (_selectedCategory == 'custom') {
         charms = allCustom;
       } else {

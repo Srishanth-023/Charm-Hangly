@@ -5,6 +5,7 @@ import 'charm.dart';
 class CharmCatalog {
   static const List<CharmCategory> categories = [
     CharmCategory(id: 'all', name: 'All Charms', icon: Icons.auto_awesome),
+    CharmCategory(id: 'favourites', name: 'Favourites', icon: Icons.favorite),
     CharmCategory(id: 'protection', name: 'Protection', icon: Icons.shield),
     CharmCategory(id: 'luck', name: 'Luck & Fortune', icon: Icons.monetization_on),
     CharmCategory(id: 'ritual', name: 'Ritual & Home', icon: Icons.home),

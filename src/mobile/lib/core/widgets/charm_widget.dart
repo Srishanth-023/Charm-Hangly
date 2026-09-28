@@ -16,7 +16,12 @@ class CharmWidget extends StatelessWidget {
       if (charm.assetPath.toLowerCase().endsWith('.svg')) {
         return SvgPicture.file(file, fit: fit, placeholderBuilder: (_) => const CircularProgressIndicator.adaptive());
       } else {
-        return Image.file(file, fit: fit, errorBuilder: (_, __, ___) => const Icon(Icons.broken_image));
+        return Image.file(
+          file, 
+          fit: fit, 
+          cacheWidth: 400, // Optimize memory usage for custom camera/gallery images
+          errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+        );
       }
     } else {
       if (charm.assetPath.toLowerCase().endsWith('.svg')) {
