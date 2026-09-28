@@ -1,123 +1,163 @@
 import React, { useEffect, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import './index.css';
 
-function App() {
-  const heroRef = useRef(null);
+const YELLOW_COLORS = ['#F4A825', '#FFD873', '#ffffff'];
+
+function popConfetti(originX) {
+  confetti({
+    particleCount: 45,
+    angle: originX === 0 ? 60 : 120,
+    spread: 60,
+    origin: { x: originX, y: 0.6 },
+    colors: YELLOW_COLORS,
+  });
+}
+
+function useParallax() {
+  const blobRefs = useRef([]);
 
   useEffect(() => {
-    const hero = heroRef.current;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
 
-    const handleMouseMove = (e) => {
-      if (window.innerWidth > 768) {
-        const x = e.clientX / window.innerWidth;
-        const y = e.clientY / window.innerHeight;
-        hero.style.background = `radial-gradient(circle at ${x * 100}% ${y * 100}%, var(--secondary-bg) 0%, var(--primary-bg) 100%)`;
-      }
+    let ticking = false;
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const y = window.scrollY;
+        blobRefs.current.forEach((el) => {
+          if (!el) return;
+          const speed = Number(el.dataset.speed || 0.2);
+          el.style.transform = `translateY(${y * speed}px)`;
+        });
+        ticking = false;
+      });
     };
 
-    const handleMouseLeave = () => {
-      if (window.innerWidth > 768) {
-        hero.style.background = `radial-gradient(circle at center, var(--secondary-bg) 0%, var(--primary-bg) 100%)`;
-      }
-    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
-    if (hero) {
-      hero.addEventListener('mousemove', handleMouseMove);
-      hero.addEventListener('mouseleave', handleMouseLeave);
-    }
+  return blobRefs;
+}
 
-    return () => {
-      if (hero) {
-        hero.removeEventListener('mousemove', handleMouseMove);
-        hero.removeEventListener('mouseleave', handleMouseLeave);
-      }
-    };
+function useReveal() {
+  useEffect(() => {
+    const els = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+}
+
+function App() {
+  const blobRefs = useParallax();
+  useReveal();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      popConfetti(0);
+      popConfetti(1);
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <>
-      <div className="decorative-line top"></div>
-
       <nav className="navbar">
-        <div className="logo">CHARM HANGLY</div>
+        <div className="logo">Charm <span>Hangly</span></div>
       </nav>
 
-      <header className="hero" id="home" ref={heroRef}>
-        <div className="hero-container">
-          <div className="hero-content">
-            <h1 className="hero-title">Experience the Magic of <br /><span>Charm Hangly</span></h1>
-            <p className="hero-subtitle">
-              A realistic charm that elegantly hangs and swings from a rope on your screen. Add a touch of beauty and fortune to your device.
-            </p>
-            <div className="hero-actions">
-              <a href="#downloads" className="btn btn-primary">Download Now</a>
-            </div>
+      <header className="hero" id="home">
+        <div className="hero-blob b1" ref={(el) => (blobRefs.current[0] = el)} data-speed="0.15"></div>
+        <div className="hero-blob b2" ref={(el) => (blobRefs.current[1] = el)} data-speed="0.3"></div>
+        <div className="hero-blob b3" ref={(el) => (blobRefs.current[2] = el)} data-speed="0.22"></div>
+
+        <div className="hero-content">
+          <h1 className="hero-title">
+            <span className="happy">Happy Birthday,</span>{' '}
+            <span className="name">Nene!!</span>
+          </h1>
+
+          <div className="nene-image-wrapper">
+            <div className="nene-glow"></div>
+            <img src="/nene-img.png" alt="NeNe" />
           </div>
-          <div className="hero-image">
-            <img src="/hangly-desktop.png" alt="Charm Hangly in action" className="floating-preview" />
-          </div>
+
+          <i className="fa-solid fa-chevron-down scroll-indicator"></i>
         </div>
       </header>
 
-      <section className="downloads" id="downloads">
+      <section className="message-section reveal">
+        <div className="message-card">
+          <p>
+            Another year, more reasons to celebrate you. Hope today brings you as much joy,
+            laughter and sunshine as you bring to everyone around you. Here's a little gift, just for you <i className="fa-solid fa-gift inline-icon"></i>
+          </p>
+        </div>
+      </section>
+
+      <section className="downloads reveal" id="downloads">
         <div className="section-header">
-          <h2>Get Charm Hangly</h2>
-          <div className="section-divider"></div>
-          <p>Available for both mobile devices and desktop computers.</p>
+          <h2>Your Birthday Gift</h2>
+          <p>A charm that hangs on your screen, made with you in mind.</p>
         </div>
 
         <div className="cards-container">
-          {/* Mobile Card */}
-          <div className="download-card" id="card-mobile">
-            <div className="card-border"></div>
-            <div className="card-content">
-              <i className="fa-solid fa-mobile-screen-button card-icon"></i>
-              <h3>Mobile Edition</h3>
-              <p>Charm Hangly lives on top of your apps, swinging naturally as you move your phone. Includes custom charm studio and 70+ built-in charms.</p>
-              <ul className="card-features">
-                <li><i className="fa-solid fa-check"></i> Interactive Physics</li>
-                <li><i className="fa-solid fa-check"></i> Custom Charms</li>
-                <li><i className="fa-solid fa-check"></i> Haptic Feedback</li>
-              </ul>
-              <a href="https://github.com/Srishanth-023/Charm-Hangly/releases/download/v1.2.0_Mobile_B'day_Version/CharmHangly-Mobile-release-v1.2.0.apk" className="btn btn-card" download>
-                <i className="fa-brands fa-android"></i> Download for Android
-              </a>
-              <span className="version-tag">Version 1.2.0</span>
-            </div>
+          <div className="download-card">
+            <i className="fa-solid fa-mobile-screen-button card-icon"></i>
+            <h3>Mobile Edition</h3>
+            <p>Charm Hangly lives on top of your apps, swinging naturally as you move your phone. Includes custom charm studio and 70+ built-in charms.</p>
+            <ul className="card-features">
+              <li><i className="fa-solid fa-check"></i> Interactive Physics</li>
+              <li><i className="fa-solid fa-check"></i> Custom Charms</li>
+              <li><i className="fa-solid fa-check"></i> Haptic Feedback</li>
+            </ul>
+            <a href="https://github.com/Srishanth-023/Charm-Hangly/releases/download/v1.2.0_Mobile_B'day_Version/CharmHangly-Mobile-release-v1.2.0.apk" className="btn-card" download>
+              <i className="fa-brands fa-android"></i> Download for Android
+            </a>
+            <span className="version-tag">Version 1.2.0</span>
           </div>
 
-          {/* Desktop Card */}
-          <div className="download-card" id="card-desktop">
-            <div className="card-border"></div>
-            <div className="card-content">
-              <i className="fa-solid fa-desktop card-icon"></i>
-              <h3>Desktop Edition</h3>
-              <p>A beautiful native Windows application that hangs charms gracefully over your desktop workspace. Built with modern WinUI 3.</p>
-              <ul className="card-features">
-                <li><i className="fa-solid fa-check"></i> x64 & ARM64 Support</li>
-                <li><i className="fa-solid fa-check"></i> Multi-charm Strings</li>
-                <li><i className="fa-solid fa-check"></i> Low Resource Usage</li>
-              </ul>
-              <div className="desktop-downloads">
-                <a href="https://github.com/Srishanth-023/Charm-Hangly/releases/download/v1.1.0(Desktop)_v1.0.0(Mobile)/CharmHangly-Setup-x64-v1.1.0.exe" className="btn btn-card small" download>
-                  <i className="fa-brands fa-windows"></i> x64
-                </a>
-                <a href="https://github.com/Srishanth-023/Charm-Hangly/releases/download/v1.1.0(Desktop)_v1.0.0(Mobile)/CharmHangly-Setup-arm64-v1.1.0.exe" className="btn btn-card small" download>
-                  <i className="fa-brands fa-windows"></i> ARM64
-                </a>
-              </div>
-              <span className="version-tag">Windows 10 / 11</span>
+          <div className="download-card">
+            <i className="fa-solid fa-desktop card-icon"></i>
+            <h3>Desktop Edition</h3>
+            <p>A beautiful native Windows application that hangs charms gracefully over your desktop workspace. Built with modern WinUI 3.</p>
+            <ul className="card-features">
+              <li><i className="fa-solid fa-check"></i> x64 & ARM64 Support</li>
+              <li><i className="fa-solid fa-check"></i> Multi-charm Strings</li>
+              <li><i className="fa-solid fa-check"></i> Low Resource Usage</li>
+            </ul>
+            <div className="desktop-downloads">
+              <a href="https://github.com/Srishanth-023/Charm-Hangly/releases/download/v1.1.0(Desktop)_v1.0.0(Mobile)/CharmHangly-Setup-x64-v1.1.0.exe" className="btn-card small" download>
+                <i className="fa-brands fa-windows"></i> x64
+              </a>
+              <a href="https://github.com/Srishanth-023/Charm-Hangly/releases/download/v1.1.0(Desktop)_v1.0.0(Mobile)/CharmHangly-Setup-arm64-v1.1.0.exe" className="btn-card small" download>
+                <i className="fa-brands fa-windows"></i> ARM64
+              </a>
             </div>
+            <span className="version-tag">Windows 10 / 11</span>
           </div>
         </div>
       </section>
 
       <footer className="footer">
-        <div className="decorative-line bottom"></div>
-        <div className="footer-content">
-          <div className="footer-logo">CHARM HANGLY</div>
-          <p>&copy; 2026 Charm Hangly. Crafted with elegance.</p>
-        </div>
+        <div className="footer-logo">Charm <span>Hangly</span></div>
+        <p>&copy; 2026 Charm Hangly.</p>
+        <p className="footer-credits">Made by Sri &lt;3 !!</p>
       </footer>
     </>
   );
