@@ -79,7 +79,7 @@ function App() {
                 <li><i className="fa-solid fa-check"></i> Custom Charms</li>
                 <li><i className="fa-solid fa-check"></i> Haptic Feedback</li>
               </ul>
-              <a href="/resources/CharmHangly-Mobile-release-v1.2.0.apk" className="btn btn-card" download>
+              <a href="https://github.com/Srishanth-023/Charm-Hangly/releases/download/v1.2.0_Mobile_B'day_Version/CharmHangly-Mobile-release-v1.2.0.apk" className="btn btn-card" download>
                 <i className="fa-brands fa-android"></i> Download for Android
               </a>
               <span className="version-tag">Version 1.2.0</span>
@@ -99,10 +99,10 @@ function App() {
                 <li><i className="fa-solid fa-check"></i> Low Resource Usage</li>
               </ul>
               <div className="desktop-downloads">
-                <a href="/resources/CharmHangly-Setup-x64-v1.1.0.exe" className="btn btn-card small" download>
+                <a href="https://github.com/Srishanth-023/Charm-Hangly/releases/download/v1.1.0(Desktop)_v1.0.0(Mobile)/CharmHangly-Setup-x64-v1.1.0.exe" className="btn btn-card small" download>
                   <i className="fa-brands fa-windows"></i> x64
                 </a>
-                <a href="/resources/CharmHangly-Setup-arm64-v1.1.0.exe" className="btn btn-card small" download>
+                <a href="https://github.com/Srishanth-023/Charm-Hangly/releases/download/v1.1.0(Desktop)_v1.0.0(Mobile)/CharmHangly-Setup-arm64-v1.1.0.exe" className="btn btn-card small" download>
                   <i className="fa-brands fa-windows"></i> ARM64
                 </a>
               </div>
