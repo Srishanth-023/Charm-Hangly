@@ -1,71 +1,76 @@
-import React, { useEffect } from 'react';
-import confetti from 'canvas-confetti';
+import React, { useEffect, useRef } from 'react';
 import './index.css';
 
 function App() {
+  const heroRef = useRef(null);
+
   useEffect(() => {
-    // Fire confetti popping animation
-    const duration = 4000;
-    const end = Date.now() + duration;
+    const hero = heroRef.current;
 
-    const frame = () => {
-      confetti({
-        particleCount: 7,
-        angle: 60,
-        spread: 60,
-        origin: { x: 0 },
-        colors: ['#FDE047', '#EAB308', '#ffffff']
-      });
-      confetti({
-        particleCount: 7,
-        angle: 120,
-        spread: 60,
-        origin: { x: 1 },
-        colors: ['#FDE047', '#EAB308', '#ffffff']
-      });
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
+    const handleMouseMove = (e) => {
+      if (window.innerWidth > 768) {
+        const x = e.clientX / window.innerWidth;
+        const y = e.clientY / window.innerHeight;
+        hero.style.background = `radial-gradient(circle at ${x * 100}% ${y * 100}%, var(--secondary-bg) 0%, var(--primary-bg) 100%)`;
       }
     };
-    frame();
+
+    const handleMouseLeave = () => {
+      if (window.innerWidth > 768) {
+        hero.style.background = `radial-gradient(circle at center, var(--secondary-bg) 0%, var(--primary-bg) 100%)`;
+      }
+    };
+
+    if (hero) {
+      hero.addEventListener('mousemove', handleMouseMove);
+      hero.addEventListener('mouseleave', handleMouseLeave);
+    }
+
+    return () => {
+      if (hero) {
+        hero.removeEventListener('mousemove', handleMouseMove);
+        hero.removeEventListener('mouseleave', handleMouseLeave);
+      }
+    };
   }, []);
 
   return (
-    <div className="parallax-wrapper">
+    <>
+      <div className="decorative-line top"></div>
+
       <nav className="navbar">
-        <div className="logo">CHARM <span>HANGLY</span></div>
+        <div className="logo">CHARM HANGLY</div>
       </nav>
 
-      <div className="parallax-group">
-        <div className="hero">
-          <div className="hero-background"></div>
+      <header className="hero" id="home" ref={heroRef}>
+        <div className="hero-container">
           <div className="hero-content">
-            <div className="birthday-badge">Wishing You A</div>
-            <h1 className="hero-title">
-              <span className="happy">Happy</span>
-              <span className="birthday">Birthday</span>
-              <span>NeNe! 🎂</span>
-            </h1>
-            <div className="nene-image-wrapper">
-              <img src="/nene-img.png" alt="Happy Birthday NeNe" />
+            <h1 className="hero-title">Experience the Magic of <br /><span>Charm Hangly</span></h1>
+            <p className="hero-subtitle">
+              A realistic charm that elegantly hangs and swings from a rope on your screen. Add a touch of beauty and fortune to your device.
+            </p>
+            <div className="hero-actions">
+              <a href="#downloads" className="btn btn-primary">Download Now</a>
             </div>
-            
-            <i className="fa-solid fa-chevron-down scroll-indicator"></i>
+          </div>
+          <div className="hero-image">
+            <img src="/hangly-desktop.png" alt="Charm Hangly in action" className="floating-preview" />
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="main-content">
-        <section className="downloads" id="downloads">
-          <div className="section-header">
-            <h2>Get Charm Hangly</h2>
-            <p>Your special gift, available for mobile and desktop.</p>
-          </div>
+      <section className="downloads" id="downloads">
+        <div className="section-header">
+          <h2>Get Charm Hangly</h2>
+          <div className="section-divider"></div>
+          <p>Available for both mobile devices and desktop computers.</p>
+        </div>
 
-          <div className="cards-container">
-            {/* Mobile Card */}
-            <div className="download-card" id="card-mobile">
+        <div className="cards-container">
+          {/* Mobile Card */}
+          <div className="download-card" id="card-mobile">
+            <div className="card-border"></div>
+            <div className="card-content">
               <i className="fa-solid fa-mobile-screen-button card-icon"></i>
               <h3>Mobile Edition</h3>
               <p>Charm Hangly lives on top of your apps, swinging naturally as you move your phone. Includes custom charm studio and 70+ built-in charms.</p>
@@ -79,9 +84,12 @@ function App() {
               </a>
               <span className="version-tag">Version 1.2.0</span>
             </div>
+          </div>
 
-            {/* Desktop Card */}
-            <div className="download-card" id="card-desktop">
+          {/* Desktop Card */}
+          <div className="download-card" id="card-desktop">
+            <div className="card-border"></div>
+            <div className="card-content">
               <i className="fa-solid fa-desktop card-icon"></i>
               <h3>Desktop Edition</h3>
               <p>A beautiful native Windows application that hangs charms gracefully over your desktop workspace. Built with modern WinUI 3.</p>
@@ -101,17 +109,17 @@ function App() {
               <span className="version-tag">Windows 10 / 11</span>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <footer className="footer">
-          <div className="footer-content">
-            <div className="footer-logo">CHARM <span>HANGLY</span></div>
-            <p>&copy; 2026 Charm Hangly. Crafted with elegance.</p>
-            <p className="footer-credits">Created by Sri &lt;3 !!</p>
-          </div>
-        </footer>
-      </div>
-    </div>
+      <footer className="footer">
+        <div className="decorative-line bottom"></div>
+        <div className="footer-content">
+          <div className="footer-logo">CHARM HANGLY</div>
+          <p>&copy; 2026 Charm Hangly. Crafted with elegance.</p>
+        </div>
+      </footer>
+    </>
   );
 }
 
