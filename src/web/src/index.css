@@ -14,6 +14,8 @@
     --ink: #221F1A;
     --muted: #756E62;
 
+    --gold-gradient: linear-gradient(135deg, #F7E7A6 0%, #D4AF37 45%, #9C6B14 100%);
+
     --font-heading: 'Cinzel', serif;
     --font-body: 'Inter', sans-serif;
 }
@@ -45,6 +47,31 @@ body {
     }
 }
 
+/* Golden glitter overlay */
+.glitter-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999;
+    overflow: hidden;
+}
+
+.glitter-dot {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--yellow);
+    box-shadow: 0 0 6px 1px var(--yellow-tint);
+    opacity: 0;
+    animation-name: twinkle;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0; transform: scale(0.4); }
+    50% { opacity: 0.85; transform: scale(1); }
+}
+
 /* Navigation */
 .navbar {
     padding: 1.75rem 5%;
@@ -66,7 +93,11 @@ body {
 }
 
 .logo span {
-    color: var(--yellow);
+    background: var(--gold-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
 }
 
 /* Hero */
@@ -124,7 +155,14 @@ body {
 }
 
 .hero-title .happy { animation-delay: 0.1s; }
-.hero-title .name { color: var(--yellow-dark); animation-delay: 0.3s; }
+.hero-title .name {
+    background: var(--gold-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation-delay: 0.3s;
+}
 
 .title-icon {
     color: var(--yellow);
@@ -346,15 +384,6 @@ section {
     transform: translateY(-2px);
 }
 
-.desktop-downloads {
-    display: flex;
-    gap: 1rem;
-}
-
-.btn-card.small {
-    flex: 1;
-}
-
 .version-tag {
     display: block;
     margin-top: 1rem;
@@ -378,7 +407,11 @@ section {
 }
 
 .footer-logo span {
-    color: var(--yellow-dark);
+    background: var(--gold-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
 }
 
 .footer p {
@@ -389,8 +422,12 @@ section {
 .footer-credits {
     margin-top: 0.5rem;
     font-weight: 600;
-    color: var(--yellow-dark) !important;
     font-family: var(--font-heading);
+    background: var(--gold-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent !important;
 }
 
 /* Responsive */
@@ -437,7 +474,4 @@ section {
         padding: 2rem 1.5rem;
     }
 
-    .desktop-downloads {
-        flex-direction: column;
-    }
 }

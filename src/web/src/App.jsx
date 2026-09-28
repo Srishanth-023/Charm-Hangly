@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import './index.css';
 
 const YELLOW_COLORS = ['#F4A825', '#FFD873', '#ffffff'];
+const GLITTER_COUNT = 45;
 
 function popConfetti(originX) {
   confetti({
@@ -44,6 +45,20 @@ function useParallax() {
   return blobRefs;
 }
 
+function useGlitterDots() {
+  return useMemo(
+    () =>
+      Array.from({ length: GLITTER_COUNT }, () => ({
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        size: 2 + Math.random() * 3,
+        delay: Math.random() * 4,
+        duration: 2.5 + Math.random() * 2.5,
+      })),
+    []
+  );
+}
+
 function useReveal() {
   useEffect(() => {
     const els = document.querySelectorAll('.reveal');
@@ -65,6 +80,7 @@ function useReveal() {
 
 function App() {
   const blobRefs = useParallax();
+  const glitterDots = useGlitterDots();
   useReveal();
 
   useEffect(() => {
@@ -77,6 +93,23 @@ function App() {
 
   return (
     <>
+      <div className="glitter-layer" aria-hidden="true">
+        {glitterDots.map((dot, i) => (
+          <span
+            key={i}
+            className="glitter-dot"
+            style={{
+              left: `${dot.left}%`,
+              top: `${dot.top}%`,
+              width: dot.size,
+              height: dot.size,
+              animationDelay: `${dot.delay}s`,
+              animationDuration: `${dot.duration}s`,
+            }}
+          />
+        ))}
+      </div>
+
       <nav className="navbar">
         <div className="logo">Charm <span>Hangly</span></div>
       </nav>
@@ -137,18 +170,13 @@ function App() {
             <h3>Desktop Edition</h3>
             <p>A beautiful native Windows application that hangs charms gracefully over your desktop workspace. Built with modern WinUI 3.</p>
             <ul className="card-features">
-              <li><i className="fa-solid fa-check"></i> x64 & ARM64 Support</li>
+              <li><i className="fa-solid fa-check"></i> x64 Support</li>
               <li><i className="fa-solid fa-check"></i> Multi-charm Strings</li>
               <li><i className="fa-solid fa-check"></i> Low Resource Usage</li>
             </ul>
-            <div className="desktop-downloads">
-              <a href="https://github.com/Srishanth-023/Charm-Hangly/releases/download/v1.1.0(Desktop)_v1.0.0(Mobile)/CharmHangly-Setup-x64-v1.1.0.exe" className="btn-card small" download>
-                <i className="fa-brands fa-windows"></i> x64
-              </a>
-              <a href="https://github.com/Srishanth-023/Charm-Hangly/releases/download/v1.1.0(Desktop)_v1.0.0(Mobile)/CharmHangly-Setup-arm64-v1.1.0.exe" className="btn-card small" download>
-                <i className="fa-brands fa-windows"></i> ARM64
-              </a>
-            </div>
+            <a href="https://github.com/Srishanth-023/Charm-Hangly/releases/download/v1.1.0(Desktop)_v1.0.0(Mobile)/CharmHangly-Setup-x64-v1.1.0.exe" className="btn-card" download>
+              <i className="fa-brands fa-windows"></i> Download for Windows
+            </a>
             <span className="version-tag">Windows 10 / 11</span>
           </div>
         </div>
