@@ -54,6 +54,7 @@ function App() {
             </div>
           </div>
           <div className="hero-image">
+            <div className="birthday-banner">Happy Birthday Nene 🎂</div>
             <img src="/hangly-desktop.png" alt="Charm Hangly in action" className="floating-preview" />
           </div>
         </div>
@@ -117,6 +118,7 @@ function App() {
         <div className="footer-content">
           <div className="footer-logo">CHARM HANGLY</div>
           <p>&copy; 2026 Charm Hangly. Crafted with elegance.</p>
+          <p className="footer-credits">Created by Sri &lt;3 !!</p>
         </div>
       </footer>
     </>
