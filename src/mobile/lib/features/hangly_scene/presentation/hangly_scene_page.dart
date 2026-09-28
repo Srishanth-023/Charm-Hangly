@@ -97,9 +97,16 @@ class _HanglyScenePageState extends State<HanglyScenePage>
     _loadSettingsAndStart();
   }
 
+  Charm _resolveCharm(HanglySettings settings) {
+    return settings.customCharms.firstWhere(
+      (c) => c.id == settings.selectedCharmId,
+      orElse: () => CharmCatalog.byId(settings.selectedCharmId),
+    );
+  }
+
   Future<void> _loadSettingsAndStart() async {
     final loaded = await widget.storage.loadSettings();
-    final charm = CharmCatalog.byId(loaded.selectedCharmId);
+    final charm = _resolveCharm(loaded);
     final hasPerm = await _hanglyChannel.checkOverlayPermission();
 
     if (mounted) {
@@ -117,9 +124,12 @@ class _HanglyScenePageState extends State<HanglyScenePage>
       _sensorService.start();
       _initialized = true;
 
-      _precacheCurrentCharm();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _confettiController.play();
+        // Defer expensive rasterization to prevent startup lag
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) _precacheCurrentCharm();
+        });
       });
 
       if (!hasPerm && !_dismissedPermissionBanner) {
@@ -134,7 +144,10 @@ class _HanglyScenePageState extends State<HanglyScenePage>
 
   Future<void> _precacheCurrentCharm() async {
     try {
-      final bytes = await CharmRasterizer.rasterizeSvgAsset(_currentCharm.assetPath);
+      final bytes = await CharmRasterizer.rasterizeCharmAsset(
+        _currentCharm.assetPath,
+        isCustom: _currentCharm.isCustom,
+      );
       if (mounted && bytes != null) {
         _precomputedCharmBytes = bytes;
       }
@@ -233,7 +246,10 @@ class _HanglyScenePageState extends State<HanglyScenePage>
 
     // If precomputation wasn't ready, resolve in background and refresh overlay
     if (bytes == null) {
-      CharmRasterizer.rasterizeSvgAsset(_currentCharm.assetPath).then((resolved) {
+      CharmRasterizer.rasterizeCharmAsset(
+        _currentCharm.assetPath,
+        isCustom: _currentCharm.isCustom,
+      ).then((resolved) {
         if (resolved != null && mounted) {
           _precomputedCharmBytes = resolved;
           if (_isOverlayActive) {
@@ -420,7 +436,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
     if (mounted) {
       setState(() {
         _settings = effective;
-        _currentCharm = CharmCatalog.byId(effective.selectedCharmId);
+        _currentCharm = _resolveCharm(effective);
         _haptics.enabled = effective.hapticsEnabled;
         _sensorService.updateEnabled(effective.deviceMotionEnabled);
       });

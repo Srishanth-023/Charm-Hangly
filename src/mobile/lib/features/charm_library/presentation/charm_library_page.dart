@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../app/theme.dart';
@@ -306,14 +306,16 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
   }
 
   Future<void> _addCustomCharm() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile == null) return;
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['png', 'jpg', 'jpeg', 'svg'],
+    );
+    if (result == null || result.isEmpty || result.single.path == null) return;
     
     final appDir = await getApplicationDocumentsDirectory();
-    final fileName = pickedFile.name;
+    final fileName = result.single.name;
     final savedImage = File('${appDir.path}/$fileName');
-    await File(pickedFile.path).copy(savedImage.path);
+    await File(result.single.path!).copy(savedImage.path);
     
     final newCharm = Charm(
       id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
