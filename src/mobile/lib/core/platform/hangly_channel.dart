@@ -28,6 +28,7 @@ class HanglyChannel {
     double ropeLength = 140.0,
     double charmRadius = 26.0,
     bool hapticsEnabled = true,
+    bool deviceMotionEnabled = true,
   }) async {
     try {
       final bool? started = await _channel.invokeMethod<bool>(
@@ -38,6 +39,7 @@ class HanglyChannel {
           'ropeLength': ropeLength,
           'charmRadius': charmRadius,
           'hapticsEnabled': hapticsEnabled,
+          'deviceMotionEnabled': deviceMotionEnabled,
         },
       );
       return started ?? false;

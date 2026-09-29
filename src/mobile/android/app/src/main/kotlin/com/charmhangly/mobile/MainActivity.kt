@@ -76,6 +76,7 @@ class MainActivity : FlutterActivity() {
                     val ropeLength = (call.argument<Double>("ropeLength") ?: 135.0).toFloat()
                     val charmRadius = (call.argument<Double>("charmRadius") ?: 25.0).toFloat()
                     val hapticsEnabled = call.argument<Boolean>("hapticsEnabled") ?: true
+                    val deviceMotionEnabled = call.argument<Boolean>("deviceMotionEnabled") ?: true
 
                     val serviceIntent = Intent(this, HanglyOverlayService::class.java).apply {
                         action = HanglyOverlayService.ACTION_SHOW_OVERLAY
@@ -84,6 +85,7 @@ class MainActivity : FlutterActivity() {
                         putExtra("ropeLength", ropeLength)
                         putExtra("charmRadius", charmRadius)
                         putExtra("hapticsEnabled", hapticsEnabled)
+                        putExtra("deviceMotionEnabled", deviceMotionEnabled)
                     }
 
                     try {

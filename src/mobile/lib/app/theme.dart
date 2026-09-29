@@ -16,7 +16,13 @@ class HanglyTheme {
   static Color get textSecondary => isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
   static Color get border => isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1);
 
-  static ThemeData get darkTheme {
+  static ThemeData? _darkTheme;
+  static ThemeData? _lightTheme;
+
+  static ThemeData get darkTheme => _darkTheme ??= _buildDarkTheme();
+  static ThemeData get lightTheme => _lightTheme ??= _buildLightTheme();
+
+  static ThemeData _buildDarkTheme() {
     return ThemeData(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: const Color(0xFF0B0F19),
@@ -71,7 +77,7 @@ class HanglyTheme {
     );
   }
 
-  static ThemeData get lightTheme {
+  static ThemeData _buildLightTheme() {
     return ThemeData(
       brightness: Brightness.light,
       scaffoldBackgroundColor: const Color(0xFFF8FAFC),

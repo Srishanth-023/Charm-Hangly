@@ -243,6 +243,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
       ropeLength: ropeLen,
       charmRadius: radius,
       hapticsEnabled: _settings.hapticsEnabled,
+      deviceMotionEnabled: _settings.deviceMotionEnabled,
     );
 
     // If precomputation wasn't ready, resolve in background and refresh overlay
@@ -260,6 +261,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
               ropeLength: ropeLen,
               charmRadius: radius,
               hapticsEnabled: _settings.hapticsEnabled,
+              deviceMotionEnabled: _settings.deviceMotionEnabled,
             );
           }
         }
@@ -350,6 +352,23 @@ class _HanglyScenePageState extends State<HanglyScenePage>
     _simulation.wake();
   }
 
+  // Stops the rope physics ticker and the accelerometer stream while another
+  // page (Library/Settings) is pushed on top. The scene is fully obscured by
+  // an opaque route at that point, so continuing to step physics and rebuild
+  // the ValueListenableBuilder every frame only burns CPU/battery and can
+  // compete with the page-transition animation on the UI thread.
+  void _suspendSceneForNavigation() {
+    _ticker.stop();
+    _lastTick = Duration.zero;
+    _sensorService.stop();
+  }
+
+  void _resumeSceneAfterNavigation() {
+    if (!mounted) return;
+    _sensorService.updateEnabled(_settings.deviceMotionEnabled);
+    _wakeTicker();
+  }
+
   void _onPointerDown(PointerDownEvent event) {
     final touch = Vec2(event.localPosition.dx, event.localPosition.dy);
     _lastPointerPos = touch;
@@ -396,6 +415,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
 
   Future<void> _openLibrary() async {
     _haptics.selectionClick();
+    _suspendSceneForNavigation();
     final dynamic selected = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -406,6 +426,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
         ),
       ),
     );
+    _resumeSceneAfterNavigation();
 
     if (selected != null && mounted) {
       final latestSettings = await widget.storage.loadSettings();
@@ -427,6 +448,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
 
   Future<void> _openSettings() async {
     _haptics.selectionClick();
+    _suspendSceneForNavigation();
     final HanglySettings? updated = await Navigator.push<HanglySettings>(
       context,
       MaterialPageRoute(
@@ -436,6 +458,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
         ),
       ),
     );
+    _resumeSceneAfterNavigation();
 
     final effective = updated ?? await widget.storage.loadSettings();
 

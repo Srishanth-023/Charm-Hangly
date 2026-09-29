@@ -22,6 +22,8 @@ class BackgroundServiceManager {
     String ropeColor = '#FFD700',
     double ropeLength = 140.0,
     double charmRadius = 26.0,
+    bool hapticsEnabled = true,
+    bool deviceMotionEnabled = true,
   }) async {
     final hasPerm = await hasOverlayPermission();
     if (!hasPerm) {
@@ -33,6 +35,8 @@ class BackgroundServiceManager {
       ropeColor: ropeColor,
       ropeLength: ropeLength,
       charmRadius: charmRadius,
+      hapticsEnabled: hapticsEnabled,
+      deviceMotionEnabled: deviceMotionEnabled,
     );
   }
 

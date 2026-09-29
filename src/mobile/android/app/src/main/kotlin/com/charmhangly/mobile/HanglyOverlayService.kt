@@ -76,6 +76,9 @@ class HanglyOverlayService : Service() {
     var hapticsEnabled: Boolean = true
         private set
 
+    var deviceMotionEnabled: Boolean = true
+        private set
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -128,6 +131,9 @@ class HanglyOverlayService : Service() {
                 if (intent?.hasExtra("hapticsEnabled") == true) {
                     hapticsEnabled = intent.getBooleanExtra("hapticsEnabled", true)
                 }
+                if (intent?.hasExtra("deviceMotionEnabled") == true) {
+                    deviceMotionEnabled = intent.getBooleanExtra("deviceMotionEnabled", true)
+                }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !android.provider.Settings.canDrawOverlays(this)) {
                     android.util.Log.w("HanglyOverlay", "Missing Settings.canDrawOverlays permission!")
@@ -157,7 +163,7 @@ class HanglyOverlayService : Service() {
                     displayView?.resume()
                     displayView?.wake()
                 }
-                startSensorListening()
+                applyDeviceMotionPreference()
                 return START_STICKY
             }
         }
@@ -278,6 +284,20 @@ class HanglyOverlayService : Service() {
         sensorListener?.let {
             sensorManager?.unregisterListener(it)
             sensorListener = null
+        }
+    }
+
+    // Honors the "Device Motion (Sensors)" app setting for the floating overlay:
+    // when disabled, the charm should hang straight down rather than keep
+    // swaying from a tilt reading the user asked us to stop reacting to.
+    private fun applyDeviceMotionPreference() {
+        if (deviceMotionEnabled) {
+            startSensorListening()
+        } else {
+            stopSensorListening()
+            gravityX = 0f
+            gravityY = 1f
+            displayView?.wake()
         }
     }
 

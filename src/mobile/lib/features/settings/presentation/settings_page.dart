@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/models/charm.dart';
+import '../../../core/models/charm_catalog.dart';
 import '../../../core/models/rope_style.dart';
 import '../../../core/models/settings.dart';
 import '../../../core/persistence/settings_storage.dart';
+import '../../../core/utils/charm_rasterizer.dart';
 import '../../../services/background_service/background_service_manager.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -37,6 +40,27 @@ class _SettingsPageState extends State<SettingsPage> {
   void _save(HanglySettings newSettings) async {
     setState(() => _settings = newSettings);
     await widget.storage.saveSettings(newSettings);
+  }
+
+  // Sliders call this on every drag tick: update in-memory state (and the
+  // visible % label) instantly, but skip the disk write. Writing to
+  // SharedPreferences on every pixel of drag was firing dozens of concurrent
+  // JSON-encode + disk-write operations per second, which is unnecessary
+  // battery/IO cost and a source of jank while dragging.
+  void _updateLive(HanglySettings newSettings) {
+    setState(() => _settings = newSettings);
+  }
+
+  // Sliders call this once via onChangeEnd, when the user releases the thumb.
+  Future<void> _persistCurrentSettings() async {
+    await widget.storage.saveSettings(_settings);
+  }
+
+  Charm _resolveCurrentCharm() {
+    return _settings.customCharms.firstWhere(
+      (c) => c.id == _settings.selectedCharmId,
+      orElse: () => CharmCatalog.byId(_settings.selectedCharmId),
+    );
   }
 
   Future<void> _handleOverlayToggle(bool enable) async {
@@ -80,9 +104,22 @@ class _SettingsPageState extends State<SettingsPage> {
         return;
       }
 
+      final charm = _resolveCurrentCharm();
+      final charmBytes = await CharmRasterizer.rasterizeCharmAsset(
+        charm.assetPath,
+        isCustom: charm.isCustom,
+      );
+      final ropeColorHex = _settings.ropeStyle == RopeStyle.goldChain
+          ? '#FFD700'
+          : '#${charm.primaryColor.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+
       await _backgroundManager.enableOverlay(
+        charmBytes: charmBytes,
+        ropeColor: ropeColorHex,
         ropeLength: _settings.ropeLength * 140.0,
         charmRadius: _settings.charmSize * 26.0,
+        hapticsEnabled: _settings.hapticsEnabled,
+        deviceMotionEnabled: _settings.deviceMotionEnabled,
       );
       _save(_settings.copyWith(backgroundOverlayEnabled: true));
     } else {
@@ -155,7 +192,8 @@ class _SettingsPageState extends State<SettingsPage> {
               max: 2.0,
               divisions: 15,
               displayFormat: '${(_settings.charmSize * 100).toInt()}%',
-              onChanged: (val) => _save(_settings.copyWith(charmSize: val)),
+              onChanged: (val) => _updateLive(_settings.copyWith(charmSize: val)),
+              onChangeEnd: (_) => _persistCurrentSettings(),
             ),
             Divider(color: HanglyTheme.border, height: 1),
             _buildSliderTile(
@@ -165,7 +203,8 @@ class _SettingsPageState extends State<SettingsPage> {
               max: 2.0,
               divisions: 15,
               displayFormat: '${(_settings.ropeLength * 100).toInt()}%',
-              onChanged: (val) => _save(_settings.copyWith(ropeLength: val)),
+              onChanged: (val) => _updateLive(_settings.copyWith(ropeLength: val)),
+              onChangeEnd: (_) => _persistCurrentSettings(),
             ),
           ]),
 
@@ -179,7 +218,8 @@ class _SettingsPageState extends State<SettingsPage> {
               max: 2.0,
               divisions: 15,
               displayFormat: '${(_settings.physicsStrength * 100).toInt()}%',
-              onChanged: (val) => _save(_settings.copyWith(physicsStrength: val)),
+              onChanged: (val) => _updateLive(_settings.copyWith(physicsStrength: val)),
+              onChangeEnd: (_) => _persistCurrentSettings(),
             ),
             Divider(color: HanglyTheme.border, height: 1),
             SwitchListTile(
@@ -286,6 +326,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required int divisions,
     required String displayFormat,
     required ValueChanged<double> onChanged,
+    required ValueChanged<double> onChangeEnd,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -305,6 +346,7 @@ class _SettingsPageState extends State<SettingsPage> {
             max: max,
             divisions: divisions,
             onChanged: onChanged,
+            onChangeEnd: onChangeEnd,
           ),
         ],
       ),
