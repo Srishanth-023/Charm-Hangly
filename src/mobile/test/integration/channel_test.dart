@@ -62,6 +62,7 @@ void main() {
         'ropeLength': 140.0,
         'charmRadius': 26.0,
         'hapticsEnabled': true,
+        'deviceMotionEnabled': true,
       });
     });
 

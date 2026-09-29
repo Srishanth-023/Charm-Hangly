@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -932,22 +933,34 @@ class _WelcomeAnimationState extends State<WelcomeAnimation> with SingleTickerPr
     )..repeat();
   }
 
+  Timer? _typingTimer;
+  Timer? _initialTimer;
+
   @override
   void dispose() {
+    _initialTimer?.cancel();
+    _typingTimer?.cancel();
     _shimmerController.dispose();
     super.dispose();
   }
 
-  Future<void> _typeText() async {
-    await Future.delayed(const Duration(milliseconds: 1000)); // Wait for app load
-    for (int i = 0; i <= _text.length; i++) {
-      if (mounted) {
+  void _typeText() {
+    _initialTimer = Timer(const Duration(milliseconds: 1000), () {
+      if (!mounted) return;
+      _typingTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
         setState(() {
-          _visibleChars = i;
+          if (_visibleChars < _text.length) {
+            _visibleChars++;
+          } else {
+            timer.cancel();
+          }
         });
-      }
-      await Future.delayed(const Duration(milliseconds: 100)); // Adjusted to match perceived original speed without lag
-    }
+      });
+    });
   }
 
   @override
