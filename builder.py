@@ -669,34 +669,33 @@ def main():
             if not build_mobile(flutter_bin, args.configuration, mobile_version):
                 sys.exit(1)
         print("\n[builder] Mobile target completed successfully.")
-        if selected_target == "mobile":
-            sys.exit(0)
 
     # Execute Windows targets
-    dotnet_exe = find_dotnet_sdk()
+    if selected_target in ["x64", "arm64", "all"]:
+        dotnet_exe = find_dotnet_sdk()
 
-    success = True
-    if args.test:
-        test_ok = run_tests(dotnet_exe, args.configuration)
-        if not test_ok:
-            sys.exit(1)
+        success = True
+        if args.test:
+            test_ok = run_tests(dotnet_exe, args.configuration)
+            if not test_ok:
+                sys.exit(1)
 
-    if selected_target == "all":
-        for arch in ["x64", "arm64"]:
-            ok = publish_target(dotnet_exe, arch, args.configuration, desktop_version)
+        if selected_target == "all":
+            for arch in ["x64", "arm64"]:
+                ok = publish_target(dotnet_exe, arch, args.configuration, desktop_version)
+                if not ok:
+                    success = False
+        elif args.publish:
+            target_arch = selected_target if selected_target in ["x64", "arm64"] else "x64"
+            ok = publish_target(dotnet_exe, target_arch, args.configuration, desktop_version)
             if not ok:
                 success = False
-    elif args.publish:
-        target_arch = selected_target if selected_target in ["x64", "arm64"] else "x64"
-        ok = publish_target(dotnet_exe, target_arch, args.configuration, desktop_version)
-        if not ok:
-            success = False
 
-    if not success:
-        print("\n[builder] One or more publish steps FAILED.")
-        sys.exit(1)
+        if not success:
+            print("\n[builder] One or more publish steps FAILED.")
+            sys.exit(1)
 
-    if selected_target == "all" or args.publish:
+    if args.publish:
         collect_github_releases()
         archive_historical_release(
             desktop_version if desktop_version != "1.0.0" else None,
