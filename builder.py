@@ -416,6 +416,25 @@ def update_mobile_version(version: str):
         pubspec.write_text(content, encoding="utf-8")
         print(f"[builder] Updated pubspec.yaml")
 
+def get_desktop_version() -> str:
+    import re
+    if APP_CSPROJ.is_file():
+        content = APP_CSPROJ.read_text(encoding="utf-8")
+        match = re.search(r"<Version>(.*?)</Version>", content)
+        if match:
+            return match.group(1).strip()
+    return "1.0.0"
+
+def get_mobile_version() -> str:
+    import re
+    pubspec = MOBILE_DIR / "pubspec.yaml"
+    if pubspec.is_file():
+        content = pubspec.read_text(encoding="utf-8")
+        match = re.search(r"^version:\s*([^\+]+)", content, flags=re.MULTILINE)
+        if match:
+            return match.group(1).strip()
+    return "1.0.0"
+
 
 def archive_historical_release(desktop_version: str = None, mobile_version: str = None):
     """Archives the generated build/github-release to a persistent releases/ folder."""
@@ -628,8 +647,9 @@ def main():
         selected_target = args.arch
 
     # If no target specified, prompt the user
-    desktop_version = "1.0.0"
-    mobile_version = "1.0.0"
+    # Extract current versions instead of defaulting to 1.0.0
+    desktop_version = get_desktop_version()
+    mobile_version = get_mobile_version()
     
     if selected_target is None and not (args.clean and not (args.test or args.publish)):
         selected_target = prompt_target_interactive()
@@ -697,10 +717,7 @@ def main():
 
     if args.publish:
         collect_github_releases()
-        archive_historical_release(
-            desktop_version if desktop_version != "1.0.0" else None,
-            mobile_version if mobile_version != "1.0.0" else None
-        )
+        archive_historical_release(desktop_version, mobile_version)
 
     print("\n[builder] All tasks completed successfully.")
     sys.exit(0)
