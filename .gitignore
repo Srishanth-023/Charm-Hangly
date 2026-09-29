@@ -31,3 +31,4 @@ desktop.ini
 .github/
 __pycache__/
 releases/
+backup/
