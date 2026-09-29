@@ -85,9 +85,9 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
     return Scaffold(
       backgroundColor: HanglyTheme.background,
       appBar: AppBar(
-        title: const Text('Charm Library'),
+        title: Text('Charm Library'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -99,14 +99,14 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
             child: TextField(
               controller: _searchController,
               onChanged: (val) => setState(() => _searchQuery = val),
-              style: const TextStyle(color: HanglyTheme.textPrimary),
+              style: TextStyle(color: HanglyTheme.textPrimary),
               decoration: InputDecoration(
                 hintText: 'Search 70+ charms...',
-                hintStyle: const TextStyle(color: HanglyTheme.textSecondary),
-                prefixIcon: const Icon(Icons.search, color: HanglyTheme.textSecondary),
+                hintStyle: TextStyle(color: HanglyTheme.textSecondary),
+                prefixIcon: Icon(Icons.search, color: HanglyTheme.textSecondary),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, color: HanglyTheme.textSecondary),
+                        icon: Icon(Icons.clear, color: HanglyTheme.textSecondary),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _searchQuery = '');
@@ -118,15 +118,15 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: HanglyTheme.border),
+                  borderSide: BorderSide(color: HanglyTheme.border),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: HanglyTheme.border),
+                  borderSide: BorderSide(color: HanglyTheme.border),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: HanglyTheme.primary),
+                  borderSide: BorderSide(color: HanglyTheme.primary),
                 ),
               ),
             ),
@@ -188,7 +188,7 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
           // 3. Charm Grid
           Expanded(
             child: charms.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
                       'No charms found',
                       style: TextStyle(color: HanglyTheme.textSecondary),
@@ -249,7 +249,7 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
                                     const SizedBox(height: 2),
                                     Text(
                                       charm.category,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         color: HanglyTheme.textSecondary,
                                         fontSize: 11,
                                       ),
@@ -279,11 +279,11 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
                                   left: 10,
                                   child: Container(
                                     padding: const EdgeInsets.all(4),
-                                    decoration: const BoxDecoration(
+                                    decoration: BoxDecoration(
                                       color: HanglyTheme.primary,
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.check,
                                       size: 14,
                                       color: Colors.black,
@@ -302,8 +302,8 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _addCustomCharm,
         backgroundColor: HanglyTheme.primary,
-        icon: const Icon(Icons.add, color: Colors.black),
-        label: const Text('Add Custom', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        icon: Icon(Icons.add, color: Colors.black),
+        label: Text('Add Custom', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -322,11 +322,11 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: HanglyTheme.surfaceElevated,
-          title: const Text('Name your charm', style: TextStyle(color: HanglyTheme.textPrimary)),
+          title: Text('Name your charm', style: TextStyle(color: HanglyTheme.textPrimary)),
           content: TextField(
             controller: controller,
-            style: const TextStyle(color: HanglyTheme.textPrimary),
-            decoration: const InputDecoration(
+            style: TextStyle(color: HanglyTheme.textPrimary),
+            decoration: InputDecoration(
               hintText: 'Charm Name',
               hintStyle: TextStyle(color: HanglyTheme.textSecondary),
               enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: HanglyTheme.primary)),
@@ -336,11 +336,11 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, null),
-              child: const Text('Cancel', style: TextStyle(color: HanglyTheme.textSecondary)),
+              child: Text('Cancel', style: TextStyle(color: HanglyTheme.textSecondary)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, controller.text.trim()),
-              child: const Text('Save', style: TextStyle(color: HanglyTheme.primary)),
+              child: Text('Save', style: TextStyle(color: HanglyTheme.primary)),
             ),
           ],
         );
@@ -371,7 +371,7 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
     
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Custom charm added!'), backgroundColor: HanglyTheme.primary),
+        SnackBar(content: Text('Custom charm added!'), backgroundColor: HanglyTheme.primary),
       );
       Navigator.pop(context, newCharm);
     }

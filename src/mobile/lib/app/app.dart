@@ -13,11 +13,18 @@ class HanglyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Charm Hangly',
-      debugShowCheckedModeBanner: false,
-      theme: HanglyTheme.darkTheme,
-      home: HanglyScenePage(storage: storage),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: HanglyTheme.themeNotifier,
+      builder: (context, themeMode, _) {
+        return MaterialApp(
+          title: 'Charm Hangly',
+          debugShowCheckedModeBanner: false,
+          themeMode: themeMode,
+          theme: HanglyTheme.lightTheme,
+          darkTheme: HanglyTheme.darkTheme,
+          home: HanglyScenePage(storage: storage),
+        );
+      },
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:confetti/confetti.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/models/charm.dart';
@@ -204,7 +205,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
           widget.storage.saveSettings(_settings);
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             backgroundColor: HanglyTheme.surfaceElevated,
             content: Row(
               children: [
@@ -272,14 +273,14 @@ class _HanglyScenePageState extends State<HanglyScenePage>
       builder: (context) => AlertDialog(
         backgroundColor: HanglyTheme.surfaceElevated,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.auto_awesome, color: HanglyTheme.primary),
             SizedBox(width: 8),
             Text('Enable Floating Charm', style: TextStyle(color: HanglyTheme.textPrimary, fontSize: 18)),
           ],
         ),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -296,7 +297,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: HanglyTheme.textSecondary)),
+            child: Text('Cancel', style: TextStyle(color: HanglyTheme.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -304,7 +305,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
               foregroundColor: Colors.black,
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Open Settings'),
+            child: Text('Open Settings'),
           ),
         ],
       ),
@@ -586,6 +587,14 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildIconButton(
+                      icon: HanglyTheme.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                      tooltip: 'Toggle Theme',
+                      onPressed: () {
+                        HanglyTheme.themeNotifier.value = HanglyTheme.isDark ? ThemeMode.light : ThemeMode.dark;
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _buildIconButton(
                       icon: Icons.collections_bookmark_outlined,
                       tooltip: 'Charm Library',
                       onPressed: _openLibrary,
@@ -628,14 +637,14 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                             color: HanglyTheme.primary.withAlpha(30),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.auto_awesome,
                             color: HanglyTheme.primary,
                             size: 20,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
@@ -669,10 +678,10 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                           onPressed: _requestPermissionWithHelp,
-                          child: const Text('Enable', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          child: Text('Enable', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close, color: HanglyTheme.textSecondary, size: 16),
+                          icon: Icon(Icons.close, color: HanglyTheme.textSecondary, size: 16),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                           onPressed: () {
@@ -726,7 +735,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                           const SizedBox(width: 8),
                           Text(
                             _currentCharm.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: HanglyTheme.textPrimary,
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
@@ -800,12 +809,12 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                 ),
               ),
 
-              // 9. Happy Birthday Animation (Appears on 2nd tap)
+              // 9. Welcome Animation (Appears on 2nd tap)
               if (_pillTapCount >= 2)
-                const Positioned.fill(
+                Positioned.fill(
                   child: Center(
                     child: IgnorePointer(
-                      child: WordByWordAnimation(text: "Happy Birthday Nene"),
+                      child: WelcomeAnimation(),
                     ),
                   ),
                 ),
@@ -858,16 +867,16 @@ class _HanglyScenePageState extends State<HanglyScenePage>
   }
 }
 
-class WordByWordAnimation extends StatefulWidget {
-  final String text;
-  const WordByWordAnimation({super.key, required this.text});
+class WelcomeAnimation extends StatefulWidget {
+  const WelcomeAnimation({super.key});
 
   @override
-  State<WordByWordAnimation> createState() => _WordByWordAnimationState();
+  State<WelcomeAnimation> createState() => _WelcomeAnimationState();
 }
 
-class _WordByWordAnimationState extends State<WordByWordAnimation> with SingleTickerProviderStateMixin {
-  String _displayedText = "";
+class _WelcomeAnimationState extends State<WelcomeAnimation> with SingleTickerProviderStateMixin {
+  int _visibleChars = 0;
+  final String _text = "WELCOME\nCHARM\nHANGLY";
   late AnimationController _shimmerController;
 
   @override
@@ -876,7 +885,7 @@ class _WordByWordAnimationState extends State<WordByWordAnimation> with SingleTi
     _typeText();
     _shimmerController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 2500),
     )..repeat();
   }
 
@@ -887,77 +896,103 @@ class _WordByWordAnimationState extends State<WordByWordAnimation> with SingleTi
   }
 
   Future<void> _typeText() async {
-    for (int i = 0; i <= widget.text.length; i++) {
+    for (int i = 0; i <= _text.length; i++) {
       if (mounted) {
         setState(() {
-          _displayedText = widget.text.substring(0, i);
+          _visibleChars = i;
         });
       }
-      // Smooth typing speed (faster for spaces to feel natural)
-      final char = i > 0 ? widget.text[i - 1] : '';
-      final delay = char == ' ' ? 200 : 120;
-      await Future.delayed(Duration(milliseconds: delay));
+      await Future.delayed(const Duration(milliseconds: 70));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final words = _displayedText.split(' ');
+    String currentText = _text.substring(0, _visibleChars);
+    List<String> lines = currentText.split('\n');
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
-      children: List.generate(words.length, (index) {
-        // Style hierarchy matching the image
-        final isFirstWord = index == 0;
-        final isSecondWord = index == 1;
-
-        return AnimatedBuilder(
-          animation: _shimmerController,
-          builder: (context, child) {
-            return ShaderMask(
-              blendMode: BlendMode.srcATop,
-              shaderCallback: (bounds) {
-                final glint = _shimmerController.value * 2.0 - 0.5;
-                return LinearGradient(
-                  colors: [
-                    Colors.transparent,
-                    Colors.white.withAlpha(200),
-                    Colors.transparent,
-                  ],
-                  stops: [glint - 0.1, glint, glint + 0.1],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ).createShader(bounds);
-              },
-              child: child,
-            );
-          },
-          child: Text(
-            words[index],
-            style: TextStyle(
-              fontFamily: 'GreatVibes',
-              fontSize: isFirstWord ? 64 : (isSecondWord ? 96 : 72),
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFFE91E63), // Original beautiful pink
-              height: 0.95,
-              shadows: [
-                Shadow(
-                  color: Colors.pinkAccent.withAlpha(100),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-                const Shadow(
-                  color: Colors.white,
-                  blurRadius: 2,
-                  offset: Offset(1, 1),
-                ),
-              ],
+      children: [
+        if (lines.isNotEmpty)
+          Text(
+            lines[0],
+            style: GoogleFonts.cinzel(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: HanglyTheme.isDark ? Colors.white : Colors.black, 
+              letterSpacing: 2,
             ),
             textAlign: TextAlign.center,
           ),
-        );
-      }),
+        if (lines.length > 1)
+          AnimatedBuilder(
+            animation: _shimmerController,
+            builder: (context, child) {
+              return ShaderMask(
+                blendMode: BlendMode.srcIn,
+                shaderCallback: (bounds) {
+                  final glint = _shimmerController.value * 2.0 - 0.5;
+                  return LinearGradient(
+                    colors: const [
+                      Color(0xFFD4AF37), // Gold Main
+                      Color(0xFFFBF5B7), // Gold Light
+                      Color(0xFFD4AF37), // Gold Main
+                    ],
+                    stops: [glint - 0.1, glint, glint + 0.1],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ).createShader(bounds);
+                },
+                child: child,
+              );
+            },
+            child: Text(
+              lines[1],
+              style: GoogleFonts.cinzel(
+                fontSize: 56,
+                fontWeight: FontWeight.w700,
+                color: Colors.white, // Masked by shader
+                letterSpacing: 4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        if (lines.length > 2)
+          AnimatedBuilder(
+            animation: _shimmerController,
+            builder: (context, child) {
+              return ShaderMask(
+                blendMode: BlendMode.srcIn,
+                shaderCallback: (bounds) {
+                  final glint = _shimmerController.value * 2.0 - 0.5;
+                  return LinearGradient(
+                    colors: const [
+                      Color(0xFFAA771C), // Gold Dark
+                      Color(0xFFFBF5B7), // Gold Light
+                      Color(0xFFAA771C), // Gold Dark
+                    ],
+                    stops: [glint - 0.1, glint, glint + 0.1],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ).createShader(bounds);
+                },
+                child: child,
+              );
+            },
+            child: Text(
+              lines[2],
+              style: GoogleFonts.cinzel(
+                fontSize: 56,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                letterSpacing: 4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+      ],
     );
   }
 }
