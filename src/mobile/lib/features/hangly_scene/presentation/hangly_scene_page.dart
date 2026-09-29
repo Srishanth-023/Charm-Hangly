@@ -502,6 +502,15 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                 ),
               ),
 
+              // 0.5. Welcome Text (drawn at startup, behind the physics layer)
+              Positioned.fill(
+                child: Center(
+                  child: IgnorePointer(
+                    child: WelcomeAnimation(),
+                  ),
+                ),
+              ),
+
               // 1. Interactive Gesture Detector over entire scene
               Positioned.fill(
                 child: Listener(
@@ -715,8 +724,21 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                       _wakeTicker();
                       _confettiController.play();
                     },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Tap for magic',
+                          style: TextStyle(
+                            color: HanglyTheme.textSecondary.withOpacity(0.6),
+                            fontSize: 10,
+                            letterSpacing: 1.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         color: HanglyTheme.surface.withAlpha(200),
                         borderRadius: BorderRadius.circular(20),
@@ -747,6 +769,8 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                           ),
                         ],
                       ),
+                    ),
+                      ],
                     ),
                   ),
                 ),
@@ -813,15 +837,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
                 ),
               ),
 
-              // 9. Welcome Animation (Appears on 2nd tap)
-              if (_pillTapCount >= 2)
-                Positioned.fill(
-                  child: Center(
-                    child: IgnorePointer(
-                      child: WelcomeAnimation(),
-                    ),
-                  ),
-                ),
+
             ],
           );
         },
@@ -900,13 +916,14 @@ class _WelcomeAnimationState extends State<WelcomeAnimation> with SingleTickerPr
   }
 
   Future<void> _typeText() async {
+    await Future.delayed(const Duration(milliseconds: 1000)); // Wait for app load
     for (int i = 0; i <= _text.length; i++) {
       if (mounted) {
         setState(() {
           _visibleChars = i;
         });
       }
-      await Future.delayed(const Duration(milliseconds: 70));
+      await Future.delayed(const Duration(milliseconds: 100)); // Adjusted to match perceived original speed without lag
     }
   }
 

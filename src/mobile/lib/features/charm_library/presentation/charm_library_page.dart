@@ -83,31 +83,17 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
       }
     }
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: HanglyTheme.background,
-        appBar: AppBar(
-          title: Text('Collections'),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
-          bottom: TabBar(
-            indicatorColor: HanglyTheme.primary,
-            labelColor: HanglyTheme.primary,
-            unselectedLabelColor: HanglyTheme.textSecondary,
-            tabs: const [
-              Tab(text: 'Charms'),
-              Tab(text: 'Threads'),
-            ],
-          ),
+    return Scaffold(
+      backgroundColor: HanglyTheme.background,
+      appBar: AppBar(
+        title: Text('Collections'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
         ),
-        body: TabBarView(
-          children: [
-            // Charms Tab
-            Column(
-              children: [
+      ),
+      body: Column(
+        children: [
           // 1. Search Bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -312,50 +298,15 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
                     },
                   ),
           ), // ends Expanded
-        ], // End Charms Column
+        ],
       ),
-      // Threads Tab
-      ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: RopeStyle.values.length,
-        itemBuilder: (context, index) {
-          final style = RopeStyle.values[index];
-          final isSelected = style == widget.settings.ropeStyle;
-          return Card(
-            color: HanglyTheme.surface,
-            margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: isSelected ? HanglyTheme.primary : HanglyTheme.border,
-                width: isSelected ? 2 : 1,
-              ),
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              title: Text(RopeStyleTable.displayNameOf(style), style: TextStyle(color: HanglyTheme.textPrimary, fontWeight: FontWeight.bold)),
-              subtitle: Text(RopeStyleTable.summaryOf(style), style: TextStyle(color: HanglyTheme.textSecondary)),
-              trailing: isSelected ? Icon(Icons.check_circle, color: HanglyTheme.primary) : null,
-              onTap: () {
-                final updatedSettings = widget.settings.copyWith(ropeStyle: style);
-                widget.storage.saveSettings(updatedSettings).then((_) {
-                  Navigator.pop(context, style); // Return RopeStyle instead of Charm if thread is changed
-                });
-              },
-            ),
-          );
-        },
-      ),
-    ],
-  ),
-  floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _addCustomCharm,
         backgroundColor: HanglyTheme.primary,
         icon: Icon(Icons.add, color: Colors.black),
         label: Text('Add Custom', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
       ), // ends floatingActionButton
-      ), // ends Scaffold
-    ); // ends DefaultTabController
+    ); // ends Scaffold
   }
 
   Future<void> _addCustomCharm() async {
