@@ -345,10 +345,11 @@ def publish_target(dotnet_exe: Path, arch: str, config: str, version: str) -> bo
     return verify_payload(output_dir)
 
 
-def collect_github_releases():
+def collect_github_releases(selected_target: str, desktop_version: str, mobile_version: str):
     """
     Consolidates all architecture-differentiated release assets into build/github-release/
     with guaranteed unique filenames, ready for direct upload into a GitHub Release.
+    Only copies assets corresponding to the built target and exact version.
     """
     dist_dir = BUILD_DIR / "github-release"
     if dist_dir.is_dir():
@@ -357,38 +358,44 @@ def collect_github_releases():
 
     print(f"\n[builder] Consolidating GitHub Release assets -> {dist_dir}")
     count = 0
-    for arch in ["x64", "arm64"]:
-        target_info = TARGET_MAP[arch]
-        rid = target_info["rid"]
-        output_dir = BUILD_DIR / rid
-        if not output_dir.is_dir():
-            continue
+    
+    if selected_target in ["all", "x64", "arm64"]:
+        arches = ["x64", "arm64"] if selected_target == "all" else [selected_target]
+        for arch in arches:
+            target_info = TARGET_MAP[arch]
+            rid = target_info["rid"]
+            output_dir = BUILD_DIR / rid
+            if not output_dir.is_dir():
+                continue
 
-        # 1. Desktop Application Installer
-        for setup_exe in output_dir.glob(f"CharmHangly-Setup-{arch}-*.exe"):
-            shutil.copy2(setup_exe, dist_dir / setup_exe.name)
-            count += 1
-
-        # 2. Standalone Portable Zip
-        for portable_zip in output_dir.glob(f"CharmHangly-Portable-{arch}-*.zip"):
-            shutil.copy2(portable_zip, dist_dir / portable_zip.name)
-            count += 1
-
-        # 3. Velopack packages (nupkg, RELEASES, releases.json)
-        packages_dir = output_dir / "Packages"
-        if packages_dir.is_dir():
-            for p in packages_dir.iterdir():
-                if p.is_file() and not p.name.endswith(".exe") and not p.name.endswith(".zip"):
-                    shutil.copy2(p, dist_dir / p.name)
-                    count += 1
-
-    # 4. Mobile APKs & AppBundles
-    mobile_dir = BUILD_DIR / "mobile"
-    if mobile_dir.is_dir():
-        for ext in ["*.apk", "*.aab"]:
-            for f in mobile_dir.rglob(ext):
-                shutil.copy2(f, dist_dir / f.name)
+            # 1. Desktop Application Installer
+            for setup_exe in output_dir.glob(f"CharmHangly-Setup-{arch}-v{desktop_version}*.exe"):
+                shutil.copy2(setup_exe, dist_dir / setup_exe.name)
                 count += 1
+
+            # 2. Standalone Portable Zip
+            for portable_zip in output_dir.glob(f"CharmHangly-Portable-{arch}-v{desktop_version}*.zip"):
+                shutil.copy2(portable_zip, dist_dir / portable_zip.name)
+                count += 1
+
+            # 3. Velopack packages (nupkg, RELEASES, releases.json)
+            packages_dir = output_dir / "Packages"
+            if packages_dir.is_dir():
+                for p in packages_dir.iterdir():
+                    if p.is_file() and not p.name.endswith(".exe") and not p.name.endswith(".zip"):
+                        # Velopack files like releases.json are generated per build so we take them
+                        shutil.copy2(p, dist_dir / p.name)
+                        count += 1
+
+    if selected_target in ["all", "mobile"]:
+        # 4. Mobile APKs & AppBundles
+        mobile_dir = BUILD_DIR / "mobile"
+        if mobile_dir.is_dir():
+            for ext in ["*.apk", "*.aab"]:
+                for f in mobile_dir.rglob(ext):
+                    if f"-v{mobile_version}" in f.name:
+                        shutil.copy2(f, dist_dir / f.name)
+                        count += 1
 
     print(f"[builder] Collected {count} GitHub Release assets with unique filenames in: {dist_dir}")
 
@@ -436,7 +443,7 @@ def get_mobile_version() -> str:
     return "1.0.0"
 
 
-def archive_historical_release(desktop_version: str = None, mobile_version: str = None):
+def archive_historical_release(selected_target: str, desktop_version: str = None, mobile_version: str = None):
     """Archives the generated build/github-release to a persistent releases/ folder."""
     import datetime
     
@@ -445,11 +452,11 @@ def archive_historical_release(desktop_version: str = None, mobile_version: str 
         return
         
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    if desktop_version and mobile_version:
+    if selected_target == "all" and desktop_version and mobile_version:
         folder_name = f"desktop-v{desktop_version}_mobile-v{mobile_version}_{timestamp}"
-    elif desktop_version:
-        folder_name = f"desktop-v{desktop_version}_{timestamp}"
-    elif mobile_version:
+    elif selected_target in ["x64", "arm64"] and desktop_version:
+        folder_name = f"{selected_target}-v{desktop_version}_{timestamp}"
+    elif selected_target == "mobile" and mobile_version:
         folder_name = f"mobile-v{mobile_version}_{timestamp}"
     else:
         folder_name = f"build_{timestamp}"
@@ -716,8 +723,8 @@ def main():
             sys.exit(1)
 
     if args.publish:
-        collect_github_releases()
-        archive_historical_release(desktop_version, mobile_version)
+        collect_github_releases(selected_target, desktop_version, mobile_version)
+        archive_historical_release(selected_target, desktop_version, mobile_version)
 
     print("\n[builder] All tasks completed successfully.")
     sys.exit(0)
