@@ -8,14 +8,14 @@ class HapticsService {
   void lightImpact() {
     if (!enabled) return;
     try {
-      HapticFeedback.lightImpact();
+      HapticFeedback.selectionClick();
     } catch (_) {}
   }
 
   void mediumImpact() {
     if (!enabled) return;
     try {
-      HapticFeedback.mediumImpact();
+      HapticFeedback.vibrate();
     } catch (_) {}
   }
 

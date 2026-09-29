@@ -396,7 +396,7 @@ class _HanglyScenePageState extends State<HanglyScenePage>
 
   Future<void> _openLibrary() async {
     _haptics.selectionClick();
-    final Charm? selected = await Navigator.push<Charm>(
+    final dynamic selected = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CharmLibraryPage(
@@ -410,8 +410,12 @@ class _HanglyScenePageState extends State<HanglyScenePage>
     if (selected != null && mounted) {
       final latestSettings = await widget.storage.loadSettings();
       setState(() {
-        _currentCharm = selected;
-        _settings = latestSettings.copyWith(selectedCharmId: selected.id);
+        if (selected is Charm) {
+          _currentCharm = selected;
+          _settings = latestSettings.copyWith(selectedCharmId: selected.id);
+        } else if (selected is RopeStyle) {
+          _settings = latestSettings.copyWith(ropeStyle: selected);
+        }
       });
       await widget.storage.saveSettings(_settings);
       _applySettingsToSimulation();
@@ -876,7 +880,7 @@ class WelcomeAnimation extends StatefulWidget {
 
 class _WelcomeAnimationState extends State<WelcomeAnimation> with SingleTickerProviderStateMixin {
   int _visibleChars = 0;
-  final String _text = "WELCOME\nCHARM\nHANGLY";
+  final String _text = "WELCOME TO\nCHARM\nHANGLY";
   late AnimationController _shimmerController;
 
   @override

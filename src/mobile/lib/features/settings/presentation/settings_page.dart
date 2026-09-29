@@ -167,33 +167,6 @@ class _SettingsPageState extends State<SettingsPage> {
               displayFormat: '${(_settings.ropeLength * 100).toInt()}%',
               onChanged: (val) => _save(_settings.copyWith(ropeLength: val)),
             ),
-            Divider(color: HanglyTheme.border, height: 1),
-            ListTile(
-              title: Text('Rope Style', style: TextStyle(color: HanglyTheme.textPrimary)),
-              subtitle: Text(
-                RopeStyleTable.summaryOf(_settings.ropeStyle),
-                style: TextStyle(color: HanglyTheme.textSecondary, fontSize: 12),
-              ),
-              trailing: DropdownButton<RopeStyle>(
-                value: _settings.ropeStyle,
-                dropdownColor: HanglyTheme.surfaceElevated,
-                underline: const SizedBox(),
-                items: RopeStyle.values.map((style) {
-                  return DropdownMenuItem(
-                    value: style,
-                    child: Text(
-                      RopeStyleTable.displayNameOf(style),
-                      style: TextStyle(color: HanglyTheme.textPrimary),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (newStyle) {
-                  if (newStyle != null) {
-                    _save(_settings.copyWith(ropeStyle: newStyle));
-                  }
-                },
-              ),
-            ),
           ]),
 
           const SizedBox(height: 16),
@@ -271,16 +244,6 @@ class _SettingsPageState extends State<SettingsPage> {
             onPressed: _resetDefaults,
           ),
 
-          const SizedBox(height: 32),
-          _buildCard([
-            ListTile(
-              title: Text('Hangly for Android', style: TextStyle(color: HanglyTheme.textPrimary, fontWeight: FontWeight.bold)),
-              subtitle: Text(
-                'Version 1.0.0 (Release)\nBuilt with Flutter & .NET parity Verlet physics.\n\nPrivacy: Hangly has no accounts, no server tracking, and stores all preferences locally on your device.',
-                style: TextStyle(color: HanglyTheme.textSecondary, fontSize: 12, height: 1.4),
-              ),
-            ),
-          ]),
           const SizedBox(height: 24),
         ],
       ),

@@ -11,6 +11,7 @@ import '../../../core/models/settings.dart';
 import '../../../core/persistence/settings_storage.dart';
 import '../../../core/widgets/charm_widget.dart';
 import '../../hangly_scene/physics/charm_metrics.dart';
+import '../../../core/models/rope_style.dart';
 
 class CharmLibraryPage extends StatefulWidget {
   final Charm currentCharm;
@@ -82,17 +83,31 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
       }
     }
 
-    return Scaffold(
-      backgroundColor: HanglyTheme.background,
-      appBar: AppBar(
-        title: Text('Charm Library'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: HanglyTheme.background,
+        appBar: AppBar(
+          title: Text('Collections'),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+          bottom: TabBar(
+            indicatorColor: HanglyTheme.primary,
+            labelColor: HanglyTheme.primary,
+            unselectedLabelColor: HanglyTheme.textSecondary,
+            tabs: const [
+              Tab(text: 'Charms'),
+              Tab(text: 'Threads'),
+            ],
+          ),
         ),
-      ),
-      body: Column(
-        children: [
+        body: TabBarView(
+          children: [
+            // Charms Tab
+            Column(
+              children: [
           // 1. Search Bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -296,16 +311,51 @@ class _CharmLibraryPageState extends State<CharmLibraryPage> {
                       );
                     },
                   ),
-          ),
-        ],
+          ), // ends Expanded
+        ], // End Charms Column
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      // Threads Tab
+      ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: RopeStyle.values.length,
+        itemBuilder: (context, index) {
+          final style = RopeStyle.values[index];
+          final isSelected = style == widget.settings.ropeStyle;
+          return Card(
+            color: HanglyTheme.surface,
+            margin: const EdgeInsets.only(bottom: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: isSelected ? HanglyTheme.primary : HanglyTheme.border,
+                width: isSelected ? 2 : 1,
+              ),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              title: Text(RopeStyleTable.displayNameOf(style), style: TextStyle(color: HanglyTheme.textPrimary, fontWeight: FontWeight.bold)),
+              subtitle: Text(RopeStyleTable.summaryOf(style), style: TextStyle(color: HanglyTheme.textSecondary)),
+              trailing: isSelected ? Icon(Icons.check_circle, color: HanglyTheme.primary) : null,
+              onTap: () {
+                final updatedSettings = widget.settings.copyWith(ropeStyle: style);
+                widget.storage.saveSettings(updatedSettings).then((_) {
+                  Navigator.pop(context, style); // Return RopeStyle instead of Charm if thread is changed
+                });
+              },
+            ),
+          );
+        },
+      ),
+    ],
+  ),
+  floatingActionButton: FloatingActionButton.extended(
         onPressed: _addCustomCharm,
         backgroundColor: HanglyTheme.primary,
         icon: Icon(Icons.add, color: Colors.black),
         label: Text('Add Custom', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-      ),
-    );
+      ), // ends floatingActionButton
+      ), // ends Scaffold
+    ); // ends DefaultTabController
   }
 
   Future<void> _addCustomCharm() async {
