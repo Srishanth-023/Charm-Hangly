@@ -1,76 +1,68 @@
-# Hangly for Windows
+<div align="center">
 
-**A charm hangs from a rope on your desktop.** Push it and it swings, then settles like a
-real hanging object.
+  <img src="https://readme-typing-svg.demolab.com?font=Inter&weight=600&size=28&duration=3000&pause=1000&color=2D3748&center=true&vCenter=true&width=600&lines=Charm+Hangly;A+charm+hanging+on+your+screen;Push+it,+and+it+swings" alt="Typing SVG" />
 
-[![Build](https://github.com/SharanCreatedThis/Hangly-Windows/actions/workflows/build.yml/badge.svg)](https://github.com/SharanCreatedThis/Hangly-Windows/actions/workflows/build.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+  <p>Minimalist interactive physics charm for Windows and Android.</p>
 
-<img src="assets/hangly-desktop.png" alt="A charm hanging from a rope over a Windows desktop" width="820">
+  [![Build](https://img.shields.io/github/actions/workflow/status/SharanCreatedThis/Hangly-Windows/build.yml?style=flat-square&logo=github&color=3182CE)](https://github.com/SharanCreatedThis/Hangly-Windows/actions)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square&color=E2E8F0&labelColor=2D3748)](LICENSE)
 
-Hangly for Windows is a C# application built with WinUI 3, .NET 9 and Win2D. It runs on
-Windows 10 and 11, with native x64 and ARM64 builds.
+  <br/>
+  
+  <img src="assets/hangly-desktop.png" alt="Desktop Preview" width="650" style="border-radius: 8px;">
 
-## Features
+</div>
 
-- 70 charms across protection, luck, ritual, classic and pop-culture collections.
-- Up to three charms on one cord, each with its own size and position.
-- Nine rope styles with real-time Verlet physics.
-- Library search, favourites, recent charms and collection filters.
-- Import your own PNG, JPG or SVG charm, or create one in the app.
-- Transparent, click-through desktop overlay with low idle CPU usage.
+<br/>
 
-<img src="assets/hangly-library.png" alt="The Hangly Library showing charm collections and a selected charm" width="820">
+### <img src="https://img.icons8.com/fluency-systems-filled/24/3182CE/info.png" width="18" valign="middle" /> Overview
 
-## v1.0.0 release
+Hangly is a physics-based interactive charm that hangs beautifully on your screen. Give it a push, and it swings with real-time Verlet physics before gracefully settling down. Available for both **Windows** (WinUI 3 & .NET 9) and **Android** (Flutter).
 
-The current release is **v1.0.0**, available for both supported Windows architectures:
+### <img src="https://img.icons8.com/fluency-systems-filled/24/3182CE/list.png" width="18" valign="middle" /> Features
 
-| PC architecture | Installer |
-|---|---|
-| Intel or AMD | `Hangly-win-x64-Setup.exe` |
-| Snapdragon, Surface Pro X and other ARM PCs | `Hangly-win-arm64-Setup.exe` |
+* **Physics Engine:** Real-time interactive swinging mechanics.
+* **Extensive Library:** Choose from over 70 unique charms across various collections.
+* **Customization:** Multiple rope styles, sizes, and position configurations.
+* **Personal Charms:** Import your own PNG, JPG, or SVG designs.
+* **Unobtrusive:** Transparent, click-through overlay with extremely low background CPU usage.
 
-Download the latest files from the [GitHub release page](https://github.com/SharanCreatedThis/Hangly-Windows/releases/latest).
-Choose ARM64 only when Windows reports an ARM-based processor in **Settings > System > About**.
+<br/>
 
-The installer does not require administrator access. To uninstall, use **Settings > Apps >
-Installed apps > Hangly > Uninstall**.
+<div align="center">
+  <img src="assets/hangly-library.png" alt="Library Preview" width="650" style="border-radius: 8px;">
+</div>
 
-## Build from source
+<br/>
 
-Requirements: [.NET 9 SDK](https://dotnet.microsoft.com/download) and Windows 10 version
-1809 or later. The core tests can run on any operating system; the app itself is Windows-only.
+### <img src="https://img.icons8.com/fluency-systems-filled/24/3182CE/download.png" width="18" valign="middle" /> Downloads
 
-```powershell
+Grab the latest automated installer files from the [Releases Page](https://github.com/SharanCreatedThis/Hangly-Windows/releases/latest). The current stable release is **v2.1.1**.
+
+| Platform | Architecture | Binary |
+| :--- | :--- | :--- |
+| **Windows** | x64 (Intel/AMD) | `Hangly-win-x64-Setup.exe` |
+| **Windows** | ARM64 (Snapdragon) | `Hangly-win-arm64-Setup.exe` |
+| **Android** | Universal | `CharmHangly-Mobile.apk` (Upcoming) |
+
+### <img src="https://img.icons8.com/fluency-systems-filled/24/3182CE/code.png" width="18" valign="middle" /> Building from Source
+
+To compile the projects locally, you can use our built-in python script which elegantly handles both the C# desktop application and the Flutter mobile app.
+
+**Prerequisites:**
+* Python 3.8+
+* .NET 9 SDK (For Windows Desktop)
+* Flutter SDK (For Android)
+
+```bash
 git clone https://github.com/SharanCreatedThis/Hangly-Windows.git
 cd Hangly-Windows
 
-dotnet test tests/Hangly.Core.Tests/Hangly.Core.Tests.csproj
-dotnet run --project src/Hangly.App/Hangly.App.csproj -c Release -r win-x64 -p:Platform=x64
+python builder.py
 ```
 
-For ARM64, use `-r win-arm64 -p:Platform=ARM64`.
+Follow the interactive prompt to build the `x64`, `arm64`, `windows`, or `mobile` architectures.
 
-## Support
+### <img src="https://img.icons8.com/fluency-systems-filled/24/3182CE/lock.png" width="18" valign="middle" /> Privacy & License
 
-[Open an issue](https://github.com/SharanCreatedThis/Hangly-Windows/issues/new/choose) for
-bugs or questions. When reporting a problem, include the relevant details from
-`%APPDATA%\Hangly\hangly.log`.
-
-See [CONTRIBUTING.md](Reference/CONTRIBUTING.md) for development guidance and
-[SECURITY.md](Reference/SECURITY.md) for security reports.
-
-## Privacy
-
-Hangly has no accounts or server. Analytics is optional and can be disabled in
-**Customize > About**. When enabled, it sends only the documented app events and the display
-name entered during first run. It does not send account names, files, file names, location or
-screen content.
-
-Read the complete [privacy policy](Reference/PRIVACY.md).
-
-## License
-
-The code is available under the [MIT License](LICENSE). The charm artwork, branding and
-Hangly name are not MIT-licensed; see [NOTICE.md](Reference/NOTICE.md).
+Hangly runs entirely offline. Optional analytics can be disabled in the settings. Released under the [MIT License](LICENSE). Please review [NOTICE.md](Reference/NOTICE.md) for specifics regarding artwork and branding rights.
