@@ -116,7 +116,24 @@ function App() {
         <div className="decorative-line bottom"></div>
         <div className="footer-content">
           <div className="footer-logo">CHARM HANGLY</div>
+          
+          <div className="social-links">
+            <a href="https://github.com/Srishanth-023/Charm-Hangly" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+              <i className="fa-brands fa-github"></i>
+            </a>
+            <a href="https://www.instagram.com/sri.23._/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+              <i className="fa-brands fa-instagram"></i>
+            </a>
+            <a href="https://www.linkedin.com/in/sri-shanth-0520a9315/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+              <i className="fa-brands fa-linkedin"></i>
+            </a>
+            <a href="mailto:srishanth232007@gmail.com" aria-label="Email">
+              <i className="fa-solid fa-envelope"></i>
+            </a>
+          </div>
+
           <p>&copy; 2026 Charm Hangly. Crafted with elegance.</p>
+          <p className="created-by">Created by Sri <span className="heart">&lt;3</span> !!</p>
         </div>
       </footer>
     </>
