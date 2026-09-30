@@ -1,0 +1,67 @@
+.heart-effect-container {
+    position: relative;
+    display: inline-block;
+}
+
+.brewing-heart {
+    position: absolute;
+    top: 0;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: floatContainer 0.8s linear forwards;
+}
+
+@keyframes floatContainer {
+    0% { transform: translate(-50%, 0); }
+    100% { transform: translate(-50%, -22px); }
+}
+
+.inner-heart {
+    color: #e62e2e;
+    font-size: 0.6rem;
+    animation: popHeart 0.8s forwards;
+}
+
+@keyframes popHeart {
+    0% { transform: scale(0); opacity: 0; }
+    20% { transform: scale(1); opacity: 1; }
+    90% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(0); opacity: 0; }
+}
+
+.splash-stain {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: transparent;
+    opacity: 0;
+    animation: splashBurst 0.6s 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
+
+@keyframes splashBurst {
+    0% {
+        opacity: 1;
+        box-shadow: 
+            0 0 0 0px #e62e2e,
+            0 0 0 0px #e62e2e,
+            0 0 0 0px #e62e2e,
+            0 0 0 0px #e62e2e,
+            0 0 0 0px #e62e2e,
+            0 0 0 0px #e62e2e;
+    }
+    100% {
+        opacity: 0;
+        box-shadow: 
+            -10px -15px 0 1px #e62e2e,
+            15px -8px 0 1.5px #e62e2e,
+            4px -20px 0 1px #e62e2e,
+            -8px 12px 0 1px #e62e2e,
+            12px 10px 0 1.5px #e62e2e,
+            -15px 0px 0 1px #e62e2e;
+    }
+}

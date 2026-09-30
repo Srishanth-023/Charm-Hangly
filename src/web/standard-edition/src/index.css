@@ -22,6 +22,14 @@
     --font-body: 'Inter', sans-serif;
 }
 
+[data-theme="dark"] {
+    --primary-bg: #121212;
+    --secondary-bg: #1A1A1A;
+    --surface: rgba(30, 30, 30, 0.8);
+    --text-main: #FFFFFF;
+    --text-muted: #A0A0A0;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -38,6 +46,7 @@ body {
     color: var(--text-main);
     line-height: 1.6;
     overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Decorative Golden Lines */
@@ -55,7 +64,7 @@ body {
 .navbar {
     padding: 2rem 5%;
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
     background: transparent;
     position: absolute;
@@ -64,6 +73,9 @@ body {
 }
 
 .logo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     font-family: var(--font-heading);
     font-size: 2rem;
     font-weight: 700;
@@ -72,6 +84,21 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     text-transform: uppercase;
+}
+
+.theme-toggle {
+    background: none;
+    border: none;
+    color: var(--text-main);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.3s ease, transform 0.2s ease;
+    padding: 0.5rem;
+}
+
+.theme-toggle:hover {
+    color: var(--gold-main);
+    transform: rotate(15deg);
 }
 
 /* Hero Section */
@@ -431,7 +458,7 @@ section {
 
 .created-by .heart {
     display: inline-block;
-    color: #ff4b4b;
+    color: #e62e2e;
     animation: heartbeat 1.5s infinite;
 }
 

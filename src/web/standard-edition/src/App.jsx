@@ -1,9 +1,19 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './index.css';
 import Sparkles from './Sparkles';
+import HeartEffect from './HeartEffect';
 
 function App() {
   const heroRef = useRef(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.body.setAttribute('data-theme', 'dark');
+    } else {
+      document.body.removeAttribute('data-theme');
+    }
+  }, [isDarkMode]);
 
   useEffect(() => {
     const hero = heroRef.current;
@@ -42,6 +52,13 @@ function App() {
       
       <nav className="navbar">
         <div className="logo">CHARM HANGLY</div>
+        <button 
+          className="theme-toggle" 
+          onClick={() => setIsDarkMode(!isDarkMode)}
+          aria-label="Toggle Dark Mode"
+        >
+          {isDarkMode ? <i className="fa-solid fa-sun"></i> : <i className="fa-solid fa-moon"></i>}
+        </button>
       </nav>
 
       <header className="hero" id="home" ref={heroRef}>
@@ -135,7 +152,7 @@ function App() {
           </div>
 
           <p>&copy; 2026 Charm Hangly. Crafted with elegance.</p>
-          <p className="created-by">Created by Sri <span className="heart">&lt;3</span> !!</p>
+          <p className="created-by">Created by Sri <HeartEffect /> !!</p>
         </div>
       </footer>
     </>
