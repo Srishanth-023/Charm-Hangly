@@ -266,6 +266,10 @@ section {
 .downloads {
     background-color: var(--secondary-bg);
     position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .cards-container {

@@ -51,7 +51,14 @@ function App() {
       <div className="decorative-line top"></div>
       
       <nav className="navbar">
-        <div className="logo">CHARM HANGLY</div>
+        <div 
+          className="logo" 
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
+          style={{ cursor: 'pointer' }}
+          title="Go to Top"
+        >
+          CHARM HANGLY
+        </div>
         <button 
           className="theme-toggle" 
           onClick={() => setIsDarkMode(!isDarkMode)}
@@ -69,7 +76,9 @@ function App() {
               A realistic charm that elegantly hangs and swings from a rope on your screen. Add a touch of beauty and fortune to your device.
             </p>
             <div className="hero-actions">
-              <a href="#downloads" className="btn btn-primary">Download Now</a>
+              <a href="#downloads" className="btn btn-primary">
+                Download Now
+              </a>
             </div>
           </div>
           <div className="hero-image">
