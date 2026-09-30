@@ -288,7 +288,6 @@ public sealed class AppEnvironment : IDisposable
 
         // Last, and on its own thread, so nothing above waits on a network call.
         CheckForUpdateQuietly();
-        OpenCustomize();
     }
 
     /// <summary>Reports charms coming and going, and the count changing.</summary>
