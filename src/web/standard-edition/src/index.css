@@ -270,6 +270,7 @@ section {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    padding-bottom: 8vh;
 }
 
 .cards-container {
