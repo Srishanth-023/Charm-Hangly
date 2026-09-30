@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import './index.css';
+import Sparkles from './Sparkles';
 
 function App() {
   const heroRef = useRef(null);
@@ -36,6 +37,7 @@ function App() {
 
   return (
     <>
+      <Sparkles />
       <div className="decorative-line top"></div>
       
       <nav className="navbar">

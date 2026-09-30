@@ -1,0 +1,44 @@
+.sparkles-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 1; /* Above background but behind main content (which usually has higher z-index or can be made relative) */
+    overflow: hidden;
+}
+
+.sparkle {
+    position: absolute;
+    background: radial-gradient(circle, #fff 0%, #FFDF00 40%, rgba(212, 175, 55, 0) 80%);
+    border-radius: 50%;
+    box-shadow: 0 0 8px 2px rgba(255, 215, 0, 0.4);
+    opacity: 0;
+    animation-name: floatAndTwinkle;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+}
+
+@keyframes floatAndTwinkle {
+    0% {
+        transform: translateY(0) scale(0);
+        opacity: 0;
+    }
+    25% {
+        transform: translateY(-15px) scale(1.2);
+        opacity: 0.8;
+    }
+    50% {
+        transform: translateY(-30px) scale(0.8);
+        opacity: 0.5;
+    }
+    75% {
+        transform: translateY(-45px) scale(1.1);
+        opacity: 0.9;
+    }
+    100% {
+        transform: translateY(-60px) scale(0);
+        opacity: 0;
+    }
+}
