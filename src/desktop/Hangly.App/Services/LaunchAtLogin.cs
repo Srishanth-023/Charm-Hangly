@@ -29,7 +29,7 @@ public interface ILaunchAtLogin
 public sealed class RegistryLaunchAtLogin : ILaunchAtLogin
 {
     private const string KeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string ValueName = "Hangly";
+    private const string ValueName = "Charm Hangly";
 
     public bool IsEnabled
     {

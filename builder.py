@@ -360,8 +360,8 @@ def collect_github_releases(selected_target: str, desktop_version: str, mobile_v
     print(f"\n[builder] Consolidating GitHub Release assets -> {dist_dir}")
     count = 0
     
-    if selected_target in ["all", "x64", "arm64"]:
-        arches = ["x64", "arm64"] if selected_target == "all" else [selected_target]
+    if selected_target in ["all", "windows", "x64", "arm64"]:
+        arches = ["x64", "arm64"] if selected_target in ["all", "windows"] else [selected_target]
         for arch in arches:
             target_info = TARGET_MAP[arch]
             rid = target_info["rid"]
@@ -455,6 +455,8 @@ def archive_historical_release(selected_target: str, desktop_version: str = None
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     if selected_target == "all" and desktop_version and mobile_version:
         folder_name = f"desktop-v{desktop_version}_mobile-v{mobile_version}_{timestamp}"
+    elif selected_target == "windows" and desktop_version:
+        folder_name = f"windows-v{desktop_version}_{timestamp}"
     elif selected_target in ["x64", "arm64"] and desktop_version:
         folder_name = f"{selected_target}-v{desktop_version}_{timestamp}"
     elif selected_target == "mobile" and mobile_version:
@@ -574,15 +576,16 @@ def prompt_target_interactive() -> str:
     print(" Hangly Build Target Selection")
     print("=" * 60)
     print(" Choose what to build:")
-    print("   1) mobile - Build Android Flutter App (APK & App Bundle)")
-    print("   2) x64    - Build Windows x64 Distribution & Tests")
-    print("   3) arm64  - Build Windows ARM64 Distribution & Tests")
-    print("   4) all    - Build ALL applications (Mobile, x64, arm64)")
+    print("   1) mobile  - Build Android Flutter App (APK & App Bundle)")
+    print("   2) x64     - Build Windows x64 Distribution & Tests")
+    print("   3) arm64   - Build Windows ARM64 Distribution & Tests")
+    print("   4) windows - Build both Windows x64 & ARM64 Distributions")
+    print("   5) all     - Build ALL applications (Mobile, x64, arm64)")
     print("=" * 60)
 
     while True:
         try:
-            choice = input("Select target [1/2/3/4 or mobile/x64/arm64/all, or 'q' to quit]: ").strip().lower()
+            choice = input("Select target [1/2/3/4/5 or mobile/x64/arm64/windows/all, or 'q' to quit]: ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             print("\n[builder] Build cancelled by user.")
             sys.exit(0)
@@ -596,14 +599,17 @@ def prompt_target_interactive() -> str:
         elif choice in ["3", "arm64"]:
             print("[builder] Selected target: arm64 (Windows ARM64)")
             return "arm64"
-        elif choice in ["4", "all"]:
+        elif choice in ["4", "windows"]:
+            print("[builder] Selected target: windows (Windows x64 & ARM64)")
+            return "windows"
+        elif choice in ["5", "all"]:
             print("[builder] Selected target: all (Mobile + Windows x64 & arm64)")
             return "all"
         elif choice in ["q", "quit", "exit"]:
             print("[builder] Build cancelled by user.")
             sys.exit(0)
         else:
-            print(f"[builder] Invalid choice '{choice}'. Please enter 1, 2, 3, 4, mobile, x64, arm64, all, or q.")
+            print(f"[builder] Invalid choice '{choice}'. Please enter 1-5, target name, or q.")
 
 
 def main():
@@ -611,9 +617,9 @@ def main():
     parser.add_argument(
         "--target",
         "-t",
-        choices=["mobile", "x64", "arm64", "all"],
+        choices=["mobile", "x64", "arm64", "windows", "all"],
         default=None,
-        help="Target platform to build: mobile, x64, arm64, or all",
+        help="Target platform to build: mobile, x64, arm64, windows, or all",
     )
     parser.add_argument(
         "--mobile",
@@ -663,7 +669,7 @@ def main():
         selected_target = prompt_target_interactive()
         print("=" * 60)
         
-        if selected_target in ["all", "x64", "arm64"]:
+        if selected_target in ["all", "windows", "x64", "arm64"]:
             v = input("Enter new DESKTOP version number (e.g. 1.2.0) or press Enter to skip: ").strip()
             if v:
                 desktop_version = v
@@ -699,7 +705,7 @@ def main():
         print("\n[builder] Mobile target completed successfully.")
 
     # Execute Windows targets
-    if selected_target in ["x64", "arm64", "all"]:
+    if selected_target in ["x64", "arm64", "windows", "all"]:
         dotnet_exe = find_dotnet_sdk()
 
         success = True
@@ -708,7 +714,7 @@ def main():
             if not test_ok:
                 sys.exit(1)
 
-        if selected_target == "all":
+        if selected_target in ["all", "windows"]:
             for arch in ["x64", "arm64"]:
                 ok = publish_target(dotnet_exe, arch, args.configuration, desktop_version)
                 if not ok:

@@ -145,4 +145,25 @@ internal static partial class NativeMethods
         IntPtr lprcClip,
         MonitorEnumProc lpfnEnum,
         IntPtr dwData);
+
+    /// <summary>Registers a font file for this process only, so it can be referenced by
+    /// family name from XAML without the app being packaged (packaged apps declare fonts
+    /// in their manifest instead; this app has no manifest to declare one in).</summary>
+    /// <remarks>
+    /// <c>FrPrivate</c> means no other process ever sees "Cinzel" added to its font list,
+    /// and Windows removes the registration itself when this process exits — there is
+    /// deliberately no matching <c>RemoveFontResourceEx</c> call anywhere in this app.
+    ///
+    /// <para>Used in place of loading the font by a <c>file:///…#Cinzel</c>
+    /// <see cref="Microsoft.UI.Xaml.Media.FontFamily"/> URI, which App.xaml.cs tried
+    /// first: that string form is documented for packaged apps' <c>ms-appx:///</c> paths,
+    /// and did not resolve for this unpackaged one. Registering the file here and then
+    /// asking for the font by its plain name is the same thing any other installed font
+    /// on the machine does, so there is no separate code path in WinUI's font loading left
+    /// to disagree with.</para>
+    /// </remarks>
+    [LibraryImport("gdi32.dll", EntryPoint = "AddFontResourceExW", StringMarshalling = StringMarshalling.Utf16, SetLastError = true)]
+    internal static partial int AddFontResourceEx(string lpszFilename, uint fl, IntPtr pdv);
+
+    internal const uint FrPrivate = 0x10;
 }

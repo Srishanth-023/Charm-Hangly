@@ -100,7 +100,16 @@ public sealed class WelcomeWindow : Window
         // Empty until the name is known, because the first thing it says is the name.
         welcomePanel = new StackPanel { Spacing = 10, Visibility = Visibility.Collapsed };
 
-        var body = new Grid { Margin = new Thickness(28) };
+        var body = new Grid
+        {
+            Margin = new Thickness(28),
+
+            // Left unset otherwise, which shows through to whatever is behind an
+            // unpackaged WinUI window with no SystemBackdrop — this is the one window
+            // in the app without one. ApplicationPageBackgroundThemeBrush is the same
+            // brand navy CustomizeWindow now uses (see App.xaml's theme overrides).
+            Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["ApplicationPageBackgroundThemeBrush"],
+        };
         body.Children.Add(askPanel);
         body.Children.Add(welcomePanel);
 

@@ -7,11 +7,15 @@
     xmlns:local="using:Hangly.App.Customize">
 
     <Grid x:Name="Root">
+        <!-- Hangly Gold to navy to Hangly Cyan, the same pairing HanglyTheme.primary /
+             .secondary use on mobile, replacing what used to fade to an unrelated
+             blueviolet. The middle stop tints toward the brand navy background rather
+             than pure transparency so the wash still reads as Hangly's under Mica. -->
         <Grid.Background>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#09FFD700" Offset="0.0" />
-                <GradientStop Color="#00000000" Offset="0.4" />
-                <GradientStop Color="#088A2BE2" Offset="1.0" />
+                <GradientStop Color="#14FFD700" Offset="0.0" />
+                <GradientStop Color="#1E0B0F19" Offset="0.4" />
+                <GradientStop Color="#1400E5FF" Offset="1.0" />
             </LinearGradientBrush>
         </Grid.Background>
         <Grid.Resources>
@@ -1203,7 +1207,7 @@
                                     </Border>
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
                                         <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                                            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Hangly" FontWeight="Bold" FontSize="26" />
+                                            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Charm Hangly" FontWeight="Bold" FontSize="26" />
                                             <Border
                                                 Background="{ThemeResource AccentFillColorDefaultBrush}"
                                                 CornerRadius="10"
@@ -1235,7 +1239,6 @@
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <HyperlinkButton x:Name="WebsiteLink" Content="🌐 Website" />
                                     <HyperlinkButton x:Name="GitHubLink" Content="💻 GitHub" />
-                                    <HyperlinkButton x:Name="ReleaseNotesLink" Content="📋 Release Notes" />
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -1387,12 +1390,6 @@
                                 <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Support the Creator" FontSize="15" />
                                 <TextBlock Opacity="0.8" Style="{StaticResource BodyTextBlockStyle}" Text="Thank you for using Hangly! If you enjoy having charms dancing on your desktop, consider supporting its development." TextWrapping="Wrap" />
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <Button
-                                        x:Name="CoffeeButton"
-                                        AutomationProperties.AutomationId="CoffeeButton"
-                                        Click="OnCoffeeClicked"
-                                        Content="☕ Buy Creator a Coffee"
-                                        Style="{StaticResource AccentButtonStyle}" />
                                     <HyperlinkButton x:Name="InstagramLink" Click="OnInstagramClicked" Content="📸 Instagram" />
                                     <HyperlinkButton x:Name="SuggestLink" Click="OnSuggestClicked" Content="💡 Suggest a Charm" />
                                 </StackPanel>
@@ -1421,11 +1418,6 @@
                                         Content="Install and Restart"
                                         Style="{StaticResource AccentButtonStyle}"
                                         Visibility="Collapsed" />
-                                    <Button
-                                        x:Name="ShowWelcomeButton"
-                                        AutomationProperties.AutomationId="ShowWelcomeButton"
-                                        Click="OnShowWelcomeClicked"
-                                        Content="Show Welcome Guide" />
                                 </StackPanel>
                                 <TextBlock
                                     x:Name="UpdateMessage"

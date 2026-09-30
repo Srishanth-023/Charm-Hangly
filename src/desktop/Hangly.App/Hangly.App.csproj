@@ -67,7 +67,7 @@
       development build that claims a version that was never released is a build whose
       About page cannot be trusted in a bug report.
     -->
-    <Version>1.1.0</Version>
+    <Version>1.5.1</Version>
     <Copyright>Copyright © 2026 sharancreatedthis</Copyright>
 
     <!--
@@ -144,6 +144,14 @@
   <ItemGroup>
     <!-- Copied whole, exactly as the macOS bundle copies Assets/Charms. -->
     <Content Include="Assets/Charms/**" CopyToOutputDirectory="PreserveNewest" />
+
+    <!-- Cinzel, the mobile app's brand headline font (there fetched at runtime via
+         google_fonts; here shipped as a file since this build has no such fetch step).
+         Loaded from AppContext.BaseDirectory in App.xaml.cs, the same pattern
+         CreatorUPIQR.png uses, rather than an ms-appx font URI, for the reason that
+         comment gives: this project is unpackaged and the PRI compiler has already
+         proven fragile about resources registered more than one way. -->
+    <Content Include="Assets/Fonts/**" CopyToOutputDirectory="PreserveNewest" />
 
     <!--
       The creator's UPI code, the same file the macOS bundle ships in Resources.

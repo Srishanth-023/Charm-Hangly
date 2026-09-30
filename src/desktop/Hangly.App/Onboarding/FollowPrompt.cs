@@ -70,7 +70,7 @@ public sealed class FollowPrompt : Window
         this.store = store;
         this.analytics = analytics;
 
-        Title = "Hangly";
+        Title = "Charm Hangly";
 
         var follow = new Button
         {

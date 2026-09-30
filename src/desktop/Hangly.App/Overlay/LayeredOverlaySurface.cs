@@ -90,7 +90,7 @@ internal sealed class LayeredOverlaySurface : IDisposable
         handle = NativeMethods.CreateWindowEx(
             exStyle,
             ClassName,
-            "Hangly",
+            "Charm Hangly",
             NativeMethods.WsPopup,
             0,
             0,

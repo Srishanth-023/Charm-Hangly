@@ -95,7 +95,7 @@ public sealed partial class CustomizeWindow : Window
 
         InitializeComponent();
         TrySetBackdrop();
-        Title = "Hangly";
+        Title = "Charm Hangly";
         AppWindow.Closing += OnClosing;
 
         ResizeToDefault();
@@ -385,6 +385,10 @@ public sealed partial class CustomizeWindow : Window
             availableWidth = 700;
         }
 
+        foreach (var oldRow in FilterChips.Children.OfType<StackPanel>())
+        {
+            oldRow.Children.Clear();
+        }
         FilterChips.Children.Clear();
         var currentRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         double currentX = 0;
@@ -926,15 +930,6 @@ public sealed partial class CustomizeWindow : Window
 
     private Services.Updater updater => environment.Updates;
 
-    /// <summary>Shows the welcome card again, from the beginning.</summary>
-    /// <remarks>
-    /// The name is already known, so the card opens on its second step — the part that
-    /// says what Hangly is and where it lives. Asking somebody to retype a name they gave
-    /// once would be a strange way to answer "how do I get back to that screen".
-    /// </remarks>
-    private void OnShowWelcomeClicked(object sender, RoutedEventArgs args) =>
-        environment.ShowWelcomeAgain();
-
     private async void OnCheckForUpdates(object sender, RoutedEventArgs args)
     {
         CheckUpdateButton.IsEnabled = false;
@@ -1176,7 +1171,6 @@ public sealed partial class CustomizeWindow : Window
 
         WebsiteLink.NavigateUri = new Uri(AppInfo.WebsiteUrl);
         GitHubLink.NavigateUri = new Uri(AppInfo.GitHubUrl);
-        ReleaseNotesLink.NavigateUri = new Uri(AppInfo.ReleaseNotesUrl);
         InstagramLink.NavigateUri = new Uri(AppInfo.InstagramUrl);
         ShowMilestones();
     }
@@ -1308,20 +1302,6 @@ public sealed partial class CustomizeWindow : Window
 
     private void OnInstagramClicked(object sender, RoutedEventArgs args) =>
         analytics.Track(Events.FollowInstagramClicked);
-
-    private async void OnCoffeeClicked(object sender, RoutedEventArgs args)
-    {
-        try
-        {
-            await BuyCoffeeSheet.ShowAsync(Root, analytics, "about");
-        }
-        catch (Exception exception)
-        {
-            // A dialog that cannot open must not take the window with it: this is the
-            // one handler reached from a button that does nothing else.
-            Diagnostics.Failure("coffee sheet", exception);
-        }
-    }
 
     private void OnCharmClicked(object sender, ItemClickEventArgs args)
     {
