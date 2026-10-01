@@ -71,7 +71,7 @@ function App() {
       <header className="hero" id="home" ref={heroRef}>
         <div className="hero-container">
           <div className="hero-content">
-            <h1 className="hero-title">Experience the Magic of <br/><span>Charm Hangly</span></h1>
+            <h1 className="hero-title">Experience the Magic of <br className="mobile-break" /><span>Charm Hangly</span></h1>
             <p className="hero-subtitle">
               A realistic charm that elegantly hangs and swings from a rope on your screen. Add a touch of beauty and fortune to your device.
             </p>
@@ -85,6 +85,9 @@ function App() {
             <img src="/hangly-desktop.png" alt="Charm Hangly in action" className="floating-preview" />
           </div>
         </div>
+        <a href="#downloads" className="scroll-indicator" aria-label="Scroll Down">
+          <i className="fa-solid fa-chevron-down"></i>
+        </a>
       </header>
 
       <section className="downloads" id="downloads">
