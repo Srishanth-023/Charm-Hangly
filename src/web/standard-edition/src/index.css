@@ -97,6 +97,46 @@ body {
     cursor: pointer;
     transition: color 0.3s ease, transform 0.2s ease;
     padding: 0.5rem;
+    z-index: 10;
+}
+
+/* Hanging Charm */
+.hanging-charm-container {
+    position: absolute;
+    right: 15vw;
+    top: -10px; /* Start slightly off-screen */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform-origin: top center;
+    animation: swing 4s ease-in-out infinite alternate;
+    z-index: 50;
+    pointer-events: none;
+}
+
+@keyframes swing {
+    0% { transform: rotate(-5deg); }
+    100% { transform: rotate(5deg); }
+}
+
+.golden-chain {
+    width: 2px;
+    height: 140px;
+    background: repeating-linear-gradient(
+        to bottom,
+        #D4AF37 0px,
+        #FFDF00 2px,
+        #996515 4px,
+        #D4AF37 6px
+    );
+    box-shadow: 1px 0 2px rgba(0,0,0,0.3);
+}
+
+.nazar-svg {
+    width: 60px; /* SVG tends to look better when slightly larger */
+    height: 60px;
+    margin-top: -8px; /* Overlap with chain slightly */
+    filter: drop-shadow(0 8px 12px rgba(0,0,0,0.4));
 }
 
 .theme-toggle:hover {
